@@ -179,3 +179,29 @@ def test_multi_sense_morpheme_notes_ambiguity(db, lex):
     assert m.verified
     assert m.meaning in ("not, without", "in, into, toward")
     assert "senses" in (m.notes or "")
+
+
+ALONE_TEXT = ('From Middle English allone, from the Old English phrase '
+              'eall an, equivalent to al- ("all") + one.')
+
+
+def test_homograph_sense_prefers_text_origin(db, lex):
+    # "al" is both Latin ad- and Old English al-; the prose names Old
+    # English, so that sense must win — and the conflict disappears.
+    cand = segment("alone", lex)[0]
+    g = ground(db, "alone", cand, [record("alone", ALONE_TEXT)])
+    al = next(m for m in g.morphemes if m.surface == "al")
+    assert al.origin == "Old English"
+    assert al.meaning == "all"
+    assert not g.conflicts
+    assert g.status == "grounded"  # "one" is corroborated by the text too
+
+
+def test_homograph_sense_follows_latin_text(db, lex):
+    cand = segment("alone", lex)[0]
+    g = ground(db, "alone", cand, [record(
+        "alone", "From Latin ad (toward); al- here is an assimilated ad-."
+    )])
+    al = next(m for m in g.morphemes if m.surface == "al")
+    assert al.origin == "Latin"
+    assert not g.conflicts

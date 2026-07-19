@@ -26,7 +26,8 @@ from dataclasses import dataclass
 from app.retrieve import EtymologyRecord, prose
 from app.segment import COMBINING, FREE, ROOT, UNKNOWN, Candidate
 
-GROUND_VERSION = "ground-v2"  # v2: conflicts from prose only
+GROUND_VERSION = "ground-v3"  # v3: sense choice prefers origin-language
+                              # agreement with the mentioning prose
 
 LANG_KEYWORDS = frozenset(
     "greek latin english french german norse dutch italian spanish arabic "
@@ -145,7 +146,22 @@ def ground(
                                             row["source_form"]))
                        for r in records)
             ]
-            row = corroborated[0] if corroborated else rows[0]
+            # Homograph senses (Latin ad- vs Old English al-) both match the
+            # surface token; prefer the sense whose origin language the
+            # mentioning prose actually names.
+            pool = corroborated or rows
+
+            def _origin_agrees(r) -> bool:
+                toks = _tokens_of(piece.surface, r["canonical"],
+                                  r["source_form"])
+                langs = set().union(
+                    set(), *(_langs_in(s) for s in sentences
+                             if _mentions(s, toks))
+                )
+                return bool(langs & _row_langs(r["origin_lang"]))
+
+            lang_matched = [r for r in pool if _origin_agrees(r)]
+            row = (lang_matched or pool)[0]
             tokens = _tokens_of(piece.surface, row["canonical"], row["source_form"])
 
             citations = list(json.loads(row["citations"]))
