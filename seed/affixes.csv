@@ -1,0 +1,199 @@
+canonical,type,origin_lang,source_form,gloss,notes,forms,wikt_entry
+mono-,prefix,Ancient Greek,monos,"one, single, alone",μόνος,mono|mon,mono-
+poly-,prefix,Ancient Greek,polus,"many, much",πολύς,poly,poly-
+di-,prefix,Ancient Greek,dis,"two, double",δίς,di,di-
+hemi-,prefix,Ancient Greek,hemi,half,ἡμι-,hemi,hemi-
+pan-,prefix,Ancient Greek,pan,"all, every",πᾶν,pan|panto,pan-
+micro-,prefix,Ancient Greek,mikros,small,μικρός,micro,micro-
+macro-,prefix,Ancient Greek,makros,"large, long",μακρός,macro,macro-
+mega-,prefix,Ancient Greek,megas,"large, great",μέγας,mega|megal|megalo,mega-
+tele-,prefix,Ancient Greek,tele,"far, distant",τῆλε,tele|tel,tele-
+auto-,prefix,Ancient Greek,autos,self,αὐτός,auto|aut,auto-
+neo-,prefix,Ancient Greek,neos,"new, recent",νέος,neo,neo-
+pseudo-,prefix,Ancient Greek,pseudes,"false, pretended",ψευδής,pseudo|pseud,pseudo-
+proto-,prefix,Ancient Greek,protos,first,πρῶτος,proto|prot,proto-
+iso-,prefix,Ancient Greek,isos,equal,ἴσος,iso,iso-
+eu-,prefix,Ancient Greek,eu,"good, well",εὖ,eu,eu-
+dys-,prefix,Ancient Greek,dus-,"bad, difficult, abnormal",δυσ-,dys,dys-
+a-,prefix,Ancient Greek,a-,"not, without","alpha privative; 'a' before consonants, 'an' before vowels. Single-letter form is highly ambiguous — expect heavy cost-function reliance.",an|a,a-
+anti-,prefix,Ancient Greek,anti,"against, opposite",ἀντί,anti|ant,anti-
+syn-,prefix,Ancient Greek,sun,"with, together","σύν; assimilates: sym- before b/m/p, syl- before l",syn|sym|syl|sys,syn-
+dia-,prefix,Ancient Greek,dia,"through, across",διά,dia,dia-
+epi-,prefix,Ancient Greek,epi,"upon, over, in addition",ἐπί,epi,epi-
+hypo-,prefix,Ancient Greek,hupo,"under, below",ὑπό,hypo|hyp,hypo-
+hyper-,prefix,Ancient Greek,huper,"over, above, excessive",ὑπέρ,hyper,hyper-
+peri-,prefix,Ancient Greek,peri,"around, about",περί,peri,peri-
+para-,prefix,Ancient Greek,para,"beside, beyond, abnormal",παρά,para|par,para-
+meta-,prefix,Ancient Greek,meta,"after, beyond, change",μετά,meta|met,meta-
+amphi-,prefix,Ancient Greek,amphi,"both, around",ἀμφί,amphi,amphi-
+endo-,prefix,Ancient Greek,endon,"within, inside",ἔνδον,endo|end,endo-
+exo-,prefix,Ancient Greek,exo,"outside, external",ἔξω,exo,exo-
+ecto-,prefix,Ancient Greek,ektos,"outside, external",ἐκτός,ecto,ecto-
+homo-,prefix,Ancient Greek,homos,same,ὁμός,homo|hom,homo-
+hetero-,prefix,Ancient Greek,heteros,"other, different",ἕτερος,hetero|heter,hetero-
+re-,prefix,Latin,re-,"again, back",,re,re-
+de-,prefix,Latin,de,"down, away; undo",,de,de-
+dis-,prefix,Latin,dis-,"apart, not, reversal",,dis|dif,dis-
+in-,prefix,Latin,in-,"not, without","assimilates: im- before b/m/p, il- before l, ir- before r; distinct from in- 'into'",in|im|il|ir,in-
+in-,prefix,Latin,in,"in, into, toward","distinct from in- 'not'",in|im,in-
+ex-,prefix,Latin,ex,"out of, from",,ex|ef,ex-
+pre-,prefix,Latin,prae,"before, in front of",,pre,pre-
+post-,prefix,Latin,post,"after, behind",,post,post-
+sub-,prefix,Latin,sub,"under, below",,sub|sus,sub-
+super-,prefix,Latin,super,"above, over, beyond",,super,super-
+trans-,prefix,Latin,trans,"across, through, beyond",,trans,trans-
+inter-,prefix,Latin,inter,"between, among",,inter,inter-
+intra-,prefix,Latin,intra,"within, inside",,intra,intra-
+contra-,prefix,Latin,contra,"against, opposite",counter- via French,contra|counter,contra-
+com-,prefix,Latin,cum,"with, together","assimilates: con-, co-, col-, cor-",com|con|co|col|cor,com-
+ab-,prefix,Latin,ab,"away from, off",,ab|abs,ab-
+ad-,prefix,Latin,ad,"to, toward","assimilates before many consonants (accede, affix, aggregate, allude, appear, arrive, assent, attract); short forms are highly ambiguous",ad|ac|af|ag|al|ap|ar|as|at,ad-
+per-,prefix,Latin,per,"through, thoroughly",,per,per-
+pro-,prefix,Latin,pro,"forward, before, in favor of",,pro,pro-
+circum-,prefix,Latin,circum,around,,circum,circum-
+extra-,prefix,Latin,extra,"outside, beyond",,extra,extra-
+ultra-,prefix,Latin,ultra,beyond,,ultra,ultra-
+semi-,prefix,Latin,semi,half,,semi,semi-
+multi-,prefix,Latin,multus,many,,multi,multi-
+uni-,prefix,Latin,unus,one,,uni,uni-
+bi-,prefix,Latin,bis,"two, twice",,bi|bin,bi-
+tri-,prefix,Latin,tres,three,also Greek τρεῖς,tri,tri-
+ambi-,prefix,Latin,ambo,"both, around",,ambi,ambi-
+non-,prefix,Latin,non,not,,non,non-
+retro-,prefix,Latin,retro,"backward, behind",,retro,retro-
+un-,prefix,Old English,un-,"not; reversal of",,un,un-
+mis-,prefix,Old English,mis-,"wrongly, badly",,mis,mis-
+over-,prefix,Old English,ofer,"above, excessive",,over,over-
+under-,prefix,Old English,under,"beneath, insufficient",,under,under-
+out-,prefix,Old English,ut,"beyond, surpassing",,out,out-
+fore-,prefix,Old English,fore,"before, in front",,fore,fore-
+lith,root,Ancient Greek,lithos,stone,λίθος,lith|litho,litho-
+chron,root,Ancient Greek,khronos,time,χρόνος,chron|chrono,chrono-
+phot,root,Ancient Greek,phos,light,"φῶς, genitive φωτός",phot|photo|phos,photo-
+graph,root,Ancient Greek,graphein,"to write, to draw",γράφειν,graph|grapho,-graph
+log,root,Ancient Greek,logos,"word, speech, reason",λόγος,log|logo,logo-
+bio,root,Ancient Greek,bios,life,βίος,bio,bio-
+geo,root,Ancient Greek,ge,earth,γῆ,geo,geo-
+therm,root,Ancient Greek,therme,heat,θέρμη,therm|thermo,thermo-
+hydr,root,Ancient Greek,hudor,water,ὕδωρ,hydr|hydro,hydro-
+path,root,Ancient Greek,pathos,"feeling, suffering, disease",πάθος,path|patho,patho-
+phon,root,Ancient Greek,phone,"sound, voice",φωνή,phon|phono,phono-
+scop,root,Ancient Greek,skopein,"to look at, examine",σκοπεῖν,scop|scope,-scope
+morph,root,Ancient Greek,morphe,"form, shape",μορφή,morph|morpho,morpho-
+psych,root,Ancient Greek,psukhe,"mind, soul",ψυχή,psych|psycho,psycho-
+derm,root,Ancient Greek,derma,skin,δέρμα,derm|derma|dermo,dermo-
+cardi,root,Ancient Greek,kardia,heart,καρδία,cardi|cardio,cardio-
+dem,root,Ancient Greek,demos,"people, populace",δῆμος,dem|demo,demo-
+phil,root,Ancient Greek,philos,"loving, fond of",φίλος,phil|philo,philo-
+phob,root,Ancient Greek,phobos,"fear, dread",φόβος,phob,-phobia
+soph,root,Ancient Greek,sophia,"wisdom, knowledge",σοφία,soph|sopho,-sophy
+therap,root,Ancient Greek,therapeia,"healing, treatment",θεραπεία,therap,therapy
+thes,root,Ancient Greek,thesis,"placing, setting",θέσις; ablaut variant thet-,thes|thet,thesis
+anthrop,root,Ancient Greek,anthropos,human being,ἄνθρωπος,anthrop|anthropo,anthropo-
+astr,root,Ancient Greek,astron,star,ἄστρον,astr|astro,astro-
+cycl,root,Ancient Greek,kuklos,"circle, wheel",κύκλος,cycl|cyclo,cyclo-
+gram,root,Ancient Greek,gramma,"written thing, letter",γράμμα,gram,-gram
+metr,root,Ancient Greek,metron,measure,μέτρον,metr|meter|metre,-meter
+phys,root,Ancient Greek,phusis,nature,φύσις,phys|physi|physio,physio-
+techn,root,Ancient Greek,tekhne,"art, skill, craft",τέχνη,techn|techno,techno-
+zo,root,Ancient Greek,zoion,"animal, living being",ζῷον,zo|zoo,zoo-
+gen,root,Ancient Greek,genos,"birth, origin, kind","γένος; Latin genus is cognate — one row for both traditions",gen|geno,-gen
+crypt,root,Ancient Greek,kruptos,"hidden, secret",κρυπτός,crypt|crypto,crypto-
+glot,root,Ancient Greek,glotta,"tongue, language",γλῶττα / γλῶσσα,glot|gloss|glosso,glosso-
+hem,root,Ancient Greek,haima,blood,αἷμα,hem|hemo|hemat|haem,hemo-
+neur,root,Ancient Greek,neuron,"nerve, sinew",νεῦρον,neur|neuro,neuro-
+opt,root,Ancient Greek,optos,"seen, visible; eye",ὀπτός,opt|opto,opto-
+pyr,root,Ancient Greek,pur,fire,πῦρ,pyr|pyro,pyro-
+the,root,Ancient Greek,theos,god,"θεός; form 'the' collides with the English article — expect cost-function reliance",the|theo,theo-
+top,root,Ancient Greek,topos,place,τόπος,top|topo,topo-
+polis,root,Ancient Greek,polis,"city, city-state",πόλις,polis|poli|pol,-polis
+paed,root,Ancient Greek,pais,child,"παῖς, genitive παιδός; distinct from Latin ped 'foot'",paed|ped|pedo,paedo-
+ped,root,Latin,pes,foot,"genitive pedis; distinct from Greek paed 'child'",ped|pedi,ped-
+aud,root,Latin,audire,to hear,,aud|audi,audire
+cap,root,Latin,capere,"to take, seize",,cap|capt|cip|cept,capere
+ced,root,Latin,cedere,"to go, yield",,ced|cess,cede
+cred,root,Latin,credere,"to believe, trust",,cred,credo
+dict,root,Latin,dicere,"to say, speak",,dict|dic,dicere
+duc,root,Latin,ducere,to lead,,duc|duct,duct
+fac,root,Latin,facere,"to make, do",,fac|fact|fic|fect,fact
+fer,root,Latin,ferre,"to carry, bear",,fer,-fer
+flect,root,Latin,flectere,to bend,,flect|flex,flectere
+form,root,Latin,forma,"shape, form",,form,form
+fract,root,Latin,frangere,to break,,fract|frag,frangere
+ject,root,Latin,iacere,"to throw, cast",,ject,iacere
+jud,root,Latin,iudex,judge,,jud|judic,judge
+junct,root,Latin,iungere,to join,,junct,iungere
+leg,root,Latin,legere,"to read, choose","collides with free word 'leg'",leg|lect,legere
+loc,root,Latin,locus,place,,loc|loco,loco-
+loqu,root,Latin,loqui,to speak,,loqu|locut,loqui
+luc,root,Latin,lux,light,"genitive lucis; lumin- from lumen",luc|lumin,lux
+man,root,Latin,manus,hand,"collides with free word 'man'",man|manu,manus
+mit,root,Latin,mittere,"to send, let go",,mit|mitt|miss,-mit
+mot,root,Latin,movere,to move,,mot|mov,movere
+mort,root,Latin,mors,death,genitive mortis,mort,mors
+nov,root,Latin,novus,new,,nov,nov-
+puls,root,Latin,pellere,"to push, drive",,pel|pell|puls,puls-
+pend,root,Latin,pendere,"to hang, weigh",,pend|pens,pendere
+port,root,Latin,portare,to carry,,port,portare
+pos,root,Latin,ponere,"to place, put",,pos|pon|posit,posit
+prim,root,Latin,primus,first,,prim|prime,primus
+quir,root,Latin,quaerere,"to seek, ask",,quir|quis|quest|quer,quest
+rupt,root,Latin,rumpere,"to break, burst",,rupt,rumpere
+scrib,root,Latin,scribere,to write,,scrib|script,scribere
+sect,root,Latin,secare,to cut,,sect,sect
+sent,root,Latin,sentire,"to feel, perceive",,sent|sens,sentire
+sequ,root,Latin,sequi,to follow,,sequ|secut,sequi
+spect,root,Latin,specere,"to look, watch",,spect|spec|spic,spect
+spir,root,Latin,spirare,to breathe,,spir,spirare
+stat,root,Latin,stare,to stand,,stat|sta|stit,stare
+struct,root,Latin,struere,"to build, assemble",,struct|stru,struct
+tact,root,Latin,tangere,to touch,,tact|tang,tangere
+tract,root,Latin,trahere,"to pull, drag",,tract,tract
+ven,root,Latin,venire,to come,,ven|vent,ven-
+vert,root,Latin,vertere,to turn,,vert|vers,vertere
+vid,root,Latin,videre,to see,,vid|vis,videre
+viv,root,Latin,vivere,to live,vit- from vita 'life',viv|vit,vivere
+voc,root,Latin,vox,"voice; to call","genitive vocis; vocare 'to call'",voc|vok,vox
+volv,root,Latin,volvere,"to roll, turn",,volv|volut,volvere
+-ic,suffix,Latin/Greek,-icus/-ikos,"relating to, characterized by",,ic,-ic
+-al,suffix,Latin,-alis,"relating to, of the kind of",,al|ial,-al
+-ous,suffix,Latin,-osus,"full of, having",,ous|ious|eous,-ous
+-ary,suffix,Latin,-arius,"relating to; place for",,ary,-ary
+-ory,suffix,Latin,-orius,"relating to; place for",,ory,-ory
+-ive,suffix,Latin,-ivus,"tending to, having the nature of",,ive,-ive
+-able,suffix,Latin,-abilis,"capable of being",via Old French,able|ible,-able
+-tion,suffix,Latin,-tio,"act or result of",,tion|sion,-tion
+-ion,suffix,Latin,-io,"act, state, result",,ion,-ion
+-ment,suffix,Latin,-mentum,"result or means of an action",,ment,-ment
+-ity,suffix,Latin,-itas,"state or quality of",,ity|ety,-ity
+-or,suffix,Latin,-or,"one who, that which",,or,-or
+-ate,suffix,Latin,-atus,"having; to make or act",,ate,-ate
+-ify,suffix,Latin,-ificare,"to make, cause to become",,ify|fy,-ify
+-age,suffix,Latin,-aticum,"action, collection, condition",via Old French,age,-age
+-ance,suffix,Latin,-antia,"state or quality of",,ance|ence|ancy|ency,-ance
+-ant,suffix,Latin,-antem,"performing or being (agent/adjective)",,ant|ent,-ant
+-arian,suffix,Latin,-arius,"believer in, advocate of",,arian,-arian
+-ia,suffix,Latin/Greek,-ia,"state, condition; used in names of places and diseases",,ia,-ia
+-ist,suffix,Ancient Greek,-istes,"one who practices or believes",-ιστής,ist,-ist
+-ism,suffix,Ancient Greek,-ismos,"doctrine, practice, condition",-ισμός,ism,-ism
+-ize,suffix,Ancient Greek,-izein,"to make, to become, to treat",-ίζειν; -ise British,ize|ise,-ize
+-oid,suffix,Ancient Greek,-oeides,"resembling, like",-οειδής,oid,-oid
+-itis,suffix,Ancient Greek,-itis,inflammation of,-ῖτις,itis,-itis
+-logy,suffix,Ancient Greek,-logia,"study of, discourse",-λογία; from logos,logy,-logy
+-sis,suffix,Ancient Greek,-sis,"process, action, state",-σις; as in thesis = the- + -sis,sis,-sis
+-graphy,suffix,Ancient Greek,-graphia,"writing, recording, field of study",-γραφία,graphy,-graphy
+-cracy,suffix,Ancient Greek,-kratia,"rule, government",-κρατία; -crat 'ruler/supporter',cracy|crat,-cracy
+-ness,suffix,Old English,-nes,"state or quality of",,ness,-ness
+-er,suffix,Old English,-ere,"one who, that which",agent suffix,er,-er
+-ful,suffix,Old English,-full,"full of, characterized by",,ful,-ful
+-less,suffix,Old English,-leas,"without, lacking",,less,-less
+-ly,suffix,Old English,-lice,"in the manner of",,ly,-ly
+-ish,suffix,Old English,-isc,"somewhat like, of the nature of",,ish,-ish
+-hood,suffix,Old English,-had,"state, condition, group",,hood,-hood
+-ship,suffix,Old English,-scipe,"state, office, skill",,ship,-ship
+-dom,suffix,Old English,-dom,"domain, condition, realm",,dom,-dom
+-en,suffix,Old English,-nian,"to make, become; made of",,en,-en
+-ward,suffix,Old English,-weard,in the direction of,,ward|wards,-ward
+-wise,suffix,Old English,wise,"in the manner or direction of",,wise,-wise
+-y,suffix,Old English,-ig,"characterized by, full of","single-letter form is highly ambiguous — expect cost-function reliance",y,-y
+-esque,suffix,French,-esque,"in the style of, resembling",from Italian -esco,esque,-esque
