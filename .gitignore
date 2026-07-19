@@ -10,3 +10,4 @@ wikiword.db
 # Front end
 front/node_modules/
 front/dist/
+eval_results.jsonl

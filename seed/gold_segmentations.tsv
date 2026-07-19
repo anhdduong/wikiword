@@ -1,0 +1,13 @@
+# Gold segmentations for scripts/eval_batch.py --gold (word<TAB>pieces|...).
+# Mirrors the §3.6 pinned test expectations; grow this list as words are
+# hand-checked — a regression here means the cost function or lexicon moved.
+monolithic	mono|lith|ic
+chronology	chrono|logy
+photosynthesis	photo|syn|thesis
+unionize	union|ize
+therapist	therap|ist
+blackboard	black|board
+strengths	strength|s
+convergence	con|verg|ence
+hydrophobia	hydro|phob|ia
+telegram	tele|gram
