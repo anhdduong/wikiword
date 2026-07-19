@@ -1,0 +1,12 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Generated database (rebuild: python -m app.seed && python -m scripts.verify_citations)
+wikiword.db
+
+# Front end
+front/node_modules/
+front/dist/
