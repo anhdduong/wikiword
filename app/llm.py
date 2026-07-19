@@ -19,7 +19,7 @@ import os
 import urllib.error
 import urllib.request
 
-GEMINI_MODEL = os.environ.get("WIKIWORD_GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_MODEL = os.environ.get("WIKIWORD_GEMINI_MODEL", "gemini-flash-latest")
 GEMINI_TIMEOUT_S = 60
 
 _client = None
@@ -143,6 +143,21 @@ def _call_gemini(system: str, user: str, schema: dict) -> str:
     return text
 
 
+def list_gemini_models() -> list[str]:
+    """Model names this key can use with generateContent."""
+    req = urllib.request.Request(
+        "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200",
+        headers={"x-goog-api-key": _gemini_key()},
+    )
+    with urllib.request.urlopen(req, timeout=GEMINI_TIMEOUT_S) as resp:
+        data = json.loads(resp.read())
+    return [
+        m["name"].removeprefix("models/")
+        for m in data.get("models", [])
+        if "generateContent" in m.get("supportedGenerationMethods", [])
+    ]
+
+
 def call_structured(
     model: str,
     system: str,
@@ -199,4 +214,11 @@ if __name__ == "__main__":
         print("LLM call OK")
     except Exception as exc:
         print(f"LLM call FAILED: {exc}")
+        if which == "gemini":
+            try:
+                print("\nmodels available to this key (set WIKIWORD_GEMINI_MODEL):")
+                for name in list_gemini_models():
+                    print(f"  {name}")
+            except Exception as list_exc:
+                print(f"(could not list models: {list_exc})")
         raise SystemExit(1)
