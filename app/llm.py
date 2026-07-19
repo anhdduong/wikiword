@@ -1,13 +1,26 @@
-"""Shared Anthropic client plumbing for the two LLM calls (rerank, assemble).
+"""Shared LLM plumbing for the two calls (rerank, assemble).
 
-The SDK constructs a client successfully with no credentials and only fails
-at request time, so is_enabled() checks for an actual credential source.
-tests/conftest.py stubs is_enabled so tests never reach the real API.
+Two providers, picked by available credentials:
+- Anthropic (preferred when configured). The SDK constructs a client
+  successfully with no credentials and only fails at request time, so the
+  check looks for an actual credential source.
+- Gemini via the AI Studio REST API (free tier, no SDK — stdlib urllib):
+  set GEMINI_API_KEY (or GOOGLE_API_KEY). The Claude model id callers pass
+  is ignored on this provider; WIKIWORD_GEMINI_MODEL picks the model.
+
+tests/conftest.py stubs is_enabled/call_structured so tests never reach a
+real API.
 """
 
 from __future__ import annotations
 
+import json
 import os
+import urllib.error
+import urllib.request
+
+GEMINI_MODEL = os.environ.get("WIKIWORD_GEMINI_MODEL", "gemini-2.5-flash")
+GEMINI_TIMEOUT_S = 60
 
 _client = None
 _client_error = False
@@ -49,8 +62,85 @@ def get_client():
     return _client
 
 
+def _gemini_key() -> str | None:
+    return os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
+
+def provider() -> str:
+    """'anthropic' | 'gemini' | 'none'. Anthropic wins when both are set."""
+    if get_client() is not None:
+        return "anthropic"
+    if _gemini_key():
+        return "gemini"
+    return "none"
+
+
 def is_enabled() -> bool:
-    return get_client() is not None
+    return provider() != "none"
+
+
+def resolved_model(requested: str) -> str:
+    """The model that would actually serve a call asking for `requested`."""
+    return GEMINI_MODEL if provider() == "gemini" else requested
+
+
+def _gemini_schema(schema: dict) -> dict:
+    """Our JSON schema -> Gemini responseSchema (OpenAPI subset): uppercase
+    type names, no additionalProperties."""
+    out = {}
+    if "type" in schema:
+        out["type"] = schema["type"].upper()
+    if "properties" in schema:
+        out["properties"] = {
+            k: _gemini_schema(v) for k, v in schema["properties"].items()
+        }
+    if "items" in schema:
+        out["items"] = _gemini_schema(schema["items"])
+    for key in ("required", "enum", "description", "minimum", "maximum"):
+        if key in schema:
+            out[key] = schema[key]
+    return out
+
+
+def _http_post(url: str, payload: dict, headers: dict) -> tuple[int, bytes]:
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json", **headers},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=GEMINI_TIMEOUT_S) as resp:
+            return resp.status, resp.read()
+    except urllib.error.HTTPError as e:
+        return e.code, e.read()
+
+
+def _call_gemini(system: str, user: str, schema: dict) -> str:
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{GEMINI_MODEL}:generateContent"
+    )
+    payload = {
+        "system_instruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": [{"text": user}]}],
+        "generationConfig": {
+            "responseMimeType": "application/json",
+            "responseSchema": _gemini_schema(schema),
+        },
+    }
+    status, body = _http_post(url, payload, {"x-goog-api-key": _gemini_key()})
+    if status != 200:
+        raise RuntimeError(f"Gemini HTTP {status}: {body[:200]!r}")
+    data = json.loads(body)
+    candidates = data.get("candidates") or []
+    if not candidates:
+        raise RuntimeError(f"Gemini returned no candidates: {data.get('promptFeedback')}")
+    parts = candidates[0].get("content", {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in parts if not p.get("thought"))
+    if not text:
+        raise RuntimeError("Gemini returned no text parts")
+    return text
 
 
 def call_structured(
@@ -63,9 +153,12 @@ def call_structured(
 ) -> str:
     """One structured-output request; returns the JSON text. Raises on any
     failure (no credentials, transport, refusal) — callers degrade gracefully."""
+    which = provider()
+    if which == "gemini":
+        return _call_gemini(system, user, output_format["schema"])
     client = get_client()
     if client is None:
-        raise RuntimeError("no Anthropic credentials configured")
+        raise RuntimeError("no LLM credentials configured")
     response = client.messages.create(
         model=model,
         max_tokens=max_tokens,

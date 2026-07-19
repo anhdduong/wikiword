@@ -174,7 +174,10 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                 ],
                 "chosen_index": chosen_index,
                 "rerank": (
-                    {"model": rerank_module.RERANK_MODEL, "reason": result.reason}
+                    {
+                        "model": llm_module.resolved_model(rerank_module.RERANK_MODEL),
+                        "reason": result.reason,
+                    }
                     if result is not None
                     else None
                 ),

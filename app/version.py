@@ -20,12 +20,13 @@ def model_version() -> str:
         s.KNOWN_BASE, s.UNREVIEWED_PENALTY, s.FREE_BASE, s.FREE_PER_CHAR,
         s.LINKER_COST, s.UNKNOWN_BASE, s.UNKNOWN_PER_CHAR,
         s.FUNCTION_WORD_PENALTY, s.MIXED_ROOT_PENALTY,
-        # LLM calls: model ids + both prompt templates + whether they run at
-        # all (plan §4). A no-credentials deployment must not serve cache
-        # written by an LLM-enabled deployment, and vice versa.
+        # LLM calls: model ids + both prompt templates + which provider (if
+        # any) serves them (plan §4). A no-credentials deployment must not
+        # serve cache written by an LLM-enabled one, nor Gemini-written
+        # cache pass for Anthropic-written, and vice versa.
         rerank.RERANK_MODEL, rerank.PROMPT_VERSION, rerank.RERANK_SYSTEM,
         assemble.ASSEMBLE_MODEL, assemble.PROMPT_VERSION, assemble.ASSEMBLE_SYSTEM,
-        llm.is_enabled(),
+        llm.is_enabled(), llm.provider(), llm.GEMINI_MODEL,
         ground.GROUND_VERSION,
         compose.COMPOSE_VERSION,
     ))
