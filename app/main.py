@@ -22,6 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from dataclasses import asdict
 
 from app import assemble as assemble_module
+from app import compose as compose_module
 from app import ground as ground_module
 from app import llm as llm_module
 from app import rerank as rerank_module
@@ -108,12 +109,14 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
             grounding = ground_module.ground(
                 conn, w, candidates[chosen_index], records
             )
-            # llm_assemble (plan §4): prose synthesized only from the
-            # grounded facts. No facts, or LLM disabled -> null fields,
-            # never invented prose. A transient failure serves the response
-            # uncached, same rule as the rerank.
+            # Prose fields. With the LLM: llm_assemble (plan §4), synthesized
+            # only from grounded facts. Without it: deterministic fallback —
+            # glosses joined for the literal sense, a fetched dictionary
+            # definition for modern usage. Either way, no facts -> null
+            # fields, never invented prose; a transient failure serves the
+            # response uncached, same rule as the rerank.
             prose_texts = [prose(r.text) for r in records]
-            assembled = None
+            literal = modern = None
             assemble_degraded = False
             assemble_note = None
             if not assemble_module.has_facts(grounding.morphemes):
@@ -129,6 +132,23 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                     assemble_note = (
                         "prose assembly failed for this request (uncached)"
                     )
+                else:
+                    literal = assembled.literal_meaning
+                    modern = assembled.modern_usage
+            else:
+                literal = compose_module.literal_meaning(grounding.morphemes)
+                modern, definitive = compose_module.fetch_definition(w)
+                assemble_degraded = not definitive
+                fallback_parts = ["literal sense composed from affix glosses"]
+                if modern:
+                    fallback_parts.append(
+                        "modern usage quoted from Free Dictionary definition"
+                    )
+                elif not definitive:
+                    fallback_parts.append(
+                        "dictionary lookup failed for this request (uncached)"
+                    )
+                assemble_note = "; ".join(fallback_parts)
 
             note_parts = [
                 p for p in (grounding.status_note, assemble_note, note) if p
@@ -138,8 +158,8 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                 "word": w,
                 "status": grounding.status,
                 "status_note": "; ".join(note_parts) or None,
-                "literal_meaning": assembled.literal_meaning if assembled else None,
-                "modern_usage": assembled.modern_usage if assembled else None,
+                "literal_meaning": literal,
+                "modern_usage": modern,
                 "morphemes": [asdict(m) for m in grounding.morphemes],
                 "conflicts": list(grounding.conflicts),
                 "etymology": [

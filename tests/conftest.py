@@ -28,3 +28,16 @@ def no_network_retrieval(request, monkeypatch):
         main_module.retrieve_module, "retrieve",
         lambda conn, word, **kw: [],
     )
+
+
+@pytest.fixture(autouse=True)
+def no_network_definitions(request, monkeypatch):
+    """The deterministic prose fallback fetches a dictionary definition;
+    stub it as a definitive miss everywhere except its own unit tests."""
+    if request.fspath.basename == "test_compose.py":
+        return
+    from app import compose
+
+    monkeypatch.setattr(
+        compose, "fetch_definition", lambda word, **kw: (None, True)
+    )

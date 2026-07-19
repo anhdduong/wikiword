@@ -8,7 +8,7 @@ the model id and both prompt templates into the key.
 
 import hashlib
 
-from app import assemble, ground, llm, rerank
+from app import assemble, compose, ground, llm, rerank
 from app import segment as s
 
 _ALGORITHM_TAG = "segment-rerank-v1"  # bump on structural algorithm changes
@@ -27,5 +27,6 @@ def model_version() -> str:
         assemble.ASSEMBLE_MODEL, assemble.PROMPT_VERSION, assemble.ASSEMBLE_SYSTEM,
         llm.is_enabled(),
         ground.GROUND_VERSION,
+        compose.COMPOSE_VERSION,
     ))
     return "seg-" + hashlib.sha256(key.encode()).hexdigest()[:12]

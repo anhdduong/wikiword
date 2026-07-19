@@ -262,6 +262,49 @@ def test_assemble_failure_serves_but_does_not_cache(api, monkeypatch):
     assert row is None
 
 
+def test_no_llm_composes_deterministic_prose(api, monkeypatch):
+    from app import compose as compose_module
+
+    client, db_path = api
+    monkeypatch.setattr(
+        compose_module, "fetch_definition",
+        lambda word, **kw: ("(noun) An inscription encoding a date.", True),
+    )
+    body = client.get("/lookup", params={"word": "chronogram"}).json()
+    assert body["literal_meaning"] == (
+        'chrono "time" + gram "written thing, letter"'
+    )
+    assert body["modern_usage"] == "(noun) An inscription encoding a date."
+    assert "composed from affix glosses" in body["status_note"]
+    assert "LLM calls disabled" in body["status_note"]
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT payload FROM word_cache WHERE word = 'chronogram'"
+    ).fetchone()
+    conn.close()
+    assert row is not None  # fully definitive answer: cache it
+    assert json.loads(row["payload"])["modern_usage"].startswith("(noun)")
+
+
+def test_dictionary_failure_serves_but_does_not_cache(api, monkeypatch):
+    from app import compose as compose_module
+
+    client, db_path = api
+    monkeypatch.setattr(
+        compose_module, "fetch_definition", lambda word, **kw: (None, False)
+    )
+    body = client.get("/lookup", params={"word": "thermograph"}).json()
+    assert '"heat"' in body["literal_meaning"]  # glosses still compose
+    assert body["modern_usage"] is None
+    assert "uncached" in body["status_note"]
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT word FROM word_cache WHERE word = 'thermograph'"
+    ).fetchone()
+    conn.close()
+    assert row is None  # transient dictionary failure must not be frozen
+
+
 def test_no_facts_means_null_prose_and_still_cached(api):
     # strengths: no morpheme carries an authoritative meaning, so prose
     # fields are omitted honestly — and that IS the complete answer: cache it.
