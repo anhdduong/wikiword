@@ -19,7 +19,7 @@ from typing import Sequence
 from app.ground import GroundedMorpheme
 from app.retrieve import HttpGet, _default_http_get, free_dictionary_url
 
-COMPOSE_VERSION = "compose-v1"  # folded into model_version
+COMPOSE_VERSION = "compose-v2"  # v2: definition fetched even without glosses
 
 
 def _surface(m: GroundedMorpheme) -> str:

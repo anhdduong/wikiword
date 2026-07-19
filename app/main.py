@@ -119,27 +119,33 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
             literal = modern = None
             assemble_degraded = False
             assemble_note = None
-            if not assemble_module.has_facts(grounding.morphemes):
-                assemble_note = (
-                    "no verified morpheme meanings; prose fields omitted"
-                )
-            elif llm_enabled:
-                assembled = assemble_module.assemble(
-                    w, grounding.morphemes, prose_texts
-                )
-                if assembled is None:
-                    assemble_degraded = True
+            if llm_enabled:
+                if not assemble_module.has_facts(grounding.morphemes):
                     assemble_note = (
-                        "prose assembly failed for this request (uncached)"
+                        "no verified morpheme meanings; prose fields omitted"
                     )
                 else:
-                    literal = assembled.literal_meaning
-                    modern = assembled.modern_usage
+                    assembled = assemble_module.assemble(
+                        w, grounding.morphemes, prose_texts
+                    )
+                    if assembled is None:
+                        assemble_degraded = True
+                        assemble_note = (
+                            "prose assembly failed for this request (uncached)"
+                        )
+                    else:
+                        literal = assembled.literal_meaning
+                        modern = assembled.modern_usage
             else:
+                # The literal sense needs glosses, but the dictionary
+                # definition is independently grounded — fetch it regardless.
                 literal = compose_module.literal_meaning(grounding.morphemes)
                 modern, definitive = compose_module.fetch_definition(w)
                 assemble_degraded = not definitive
-                fallback_parts = ["literal sense composed from affix glosses"]
+                fallback_parts = [
+                    "literal sense composed from affix glosses" if literal else
+                    "no verified morpheme meanings; literal sense omitted"
+                ]
                 if modern:
                     fallback_parts.append(
                         "modern usage quoted from Free Dictionary definition"

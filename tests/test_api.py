@@ -286,6 +286,23 @@ def test_no_llm_composes_deterministic_prose(api, monkeypatch):
     assert json.loads(row["payload"])["modern_usage"].startswith("(noun)")
 
 
+def test_definition_shows_even_without_glosses(api, monkeypatch):
+    # flashback: two free-word roots, no table glosses — the literal sense
+    # can't compose, but the fetched definition is independently grounded.
+    from app import compose as compose_module
+
+    client, _ = api
+    monkeypatch.setattr(
+        compose_module, "fetch_definition",
+        lambda word, **kw: ("(noun) A scene set earlier than the story.", True),
+    )
+    body = client.get("/lookup", params={"word": "flashback"}).json()
+    assert body["literal_meaning"] is None
+    assert body["modern_usage"] == "(noun) A scene set earlier than the story."
+    assert "literal sense omitted" in body["status_note"]
+    assert "Free Dictionary" in body["status_note"]
+
+
 def test_dictionary_failure_serves_but_does_not_cache(api, monkeypatch):
     from app import compose as compose_module
 
@@ -306,12 +323,14 @@ def test_dictionary_failure_serves_but_does_not_cache(api, monkeypatch):
 
 
 def test_no_facts_means_null_prose_and_still_cached(api):
-    # strengths: no morpheme carries an authoritative meaning, so prose
-    # fields are omitted honestly — and that IS the complete answer: cache it.
+    # strengths: no morpheme carries an authoritative meaning, so the
+    # literal sense is omitted honestly — and that IS the complete answer:
+    # cache it. (fetch_definition is stubbed to a definitive miss.)
     client, db_path = api
     body = client.get("/lookup", params={"word": "strengths"}).json()
     assert body["literal_meaning"] is None
-    assert "prose fields omitted" in body["status_note"]
+    assert body["modern_usage"] is None
+    assert "literal sense omitted" in body["status_note"]
     conn = connect(db_path)
     row = conn.execute(
         "SELECT word FROM word_cache WHERE word = 'strengths'"
