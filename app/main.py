@@ -105,7 +105,15 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
 
             # ground() + status() (plan §5): verify the chosen segmentation
             # against the affix table and retrieved etymology.
-            records = retrieve_module.retrieve(conn, w)
+            # kaikki repeats one etymology under several parts of speech;
+            # keep each distinct prose text once.
+            records = []
+            seen_prose: set[str] = set()
+            for r in retrieve_module.retrieve(conn, w):
+                p = prose(r.text)
+                if p not in seen_prose:
+                    seen_prose.add(p)
+                    records.append(r)
             grounding = ground_module.ground(
                 conn, w, candidates[chosen_index], records
             )
