@@ -1,0 +1,277 @@
+import json
+
+import pytest
+from fastapi.testclient import TestClient
+
+from app.db import connect, migrate
+from app.main import create_app
+from app.seed import seed
+from app.version import model_version
+
+
+@pytest.fixture(scope="session")
+def api(tmp_path_factory):
+    db_path = tmp_path_factory.mktemp("api") / "test.db"
+    conn = connect(db_path)
+    migrate(conn)
+    seed(conn)
+    conn.close()
+    with TestClient(create_app(db_path)) as client:
+        yield client, db_path
+
+
+def test_lookup_returns_candidates(api):
+    client, _ = api
+    resp = client.get("/lookup", params={"word": "monolithic"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["word"] == "monolithic"
+    # All three morphemes are affix-table rows -> grounded (table is truth).
+    assert body["status"] == "grounded"
+    assert body["model_version"] == model_version()
+    assert body["status_note"]
+    top = body["candidates"][0]
+    assert [p["surface"] for p in top["pieces"]] == ["mono", "lith", "ic"]
+    assert [p["kind"] for p in top["pieces"]] == ["prefix", "root", "suffix"]
+    assert top["pieces"][0]["span"] == [0, 4]
+    morphemes = body["morphemes"]
+    assert [m["surface"] for m in morphemes] == ["mono", "lith", "ic"]
+    assert morphemes[0]["origin"] == "Ancient Greek"
+    assert morphemes[0]["meaning"] == "one, single, alone"
+    assert all(m["verified"] for m in morphemes)
+    assert body["conflicts"] == []
+
+
+def test_lookup_writes_cache(api):
+    client, db_path = api
+    client.get("/lookup", params={"word": "chronology"})
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT status, model_version FROM word_cache WHERE word = 'chronology'"
+    ).fetchone()
+    conn.close()
+    assert row is not None
+    assert row["status"] == "grounded"
+    assert row["model_version"] == model_version()
+
+
+def test_lookup_serves_from_cache(api):
+    client, db_path = api
+    client.get("/lookup", params={"word": "telegraph"})
+    # Poison the cached payload; if the next call returns the sentinel, it
+    # was served from cache rather than recomputed.
+    conn = connect(db_path)
+    with conn:
+        conn.execute(
+            "UPDATE word_cache SET payload = ? WHERE word = 'telegraph'",
+            (json.dumps({"sentinel": True}),),
+        )
+    conn.close()
+    assert client.get("/lookup", params={"word": "telegraph"}).json() == {
+        "sentinel": True
+    }
+
+
+def test_stale_model_version_recomputes(api):
+    client, db_path = api
+    client.get("/lookup", params={"word": "democracy"})
+    conn = connect(db_path)
+    with conn:
+        conn.execute(
+            "UPDATE word_cache SET payload = '{\"sentinel\": true}',"
+            " model_version = 'obsolete' WHERE word = 'democracy'"
+        )
+    body = client.get("/lookup", params={"word": "democracy"}).json()
+    assert "sentinel" not in body
+    assert body["model_version"] == model_version()
+    row = conn.execute(
+        "SELECT model_version FROM word_cache WHERE word = 'democracy'"
+    ).fetchone()
+    conn.close()
+    assert row["model_version"] == model_version()
+
+
+def test_word_is_normalized(api):
+    client, _ = api
+    body = client.get("/lookup", params={"word": "  MonoLithic "}).json()
+    assert body["word"] == "monolithic"
+
+
+@pytest.mark.parametrize("bad", ["", "  ", "mono lithic", "mono-lithic", "mono1", "x" * 41])
+def test_invalid_words_rejected(api, bad):
+    client, _ = api
+    assert client.get("/lookup", params={"word": bad}).status_code == 400
+
+
+def test_missing_param_rejected(api):
+    client, _ = api
+    assert client.get("/lookup").status_code == 422
+
+
+def test_front_end_served_when_built(api):
+    from pathlib import Path
+
+    if not (Path(__file__).parent.parent / "front" / "dist").is_dir():
+        pytest.skip("front end not built")
+    client, _ = api
+    resp = client.get("/")
+    assert resp.status_code == 200
+    assert '<div id="app">' in resp.text
+
+
+def test_gibberish_still_answers(api):
+    client, _ = api
+    body = client.get("/lookup", params={"word": "qzxvqx"}).json()
+    assert body["candidates"][0]["pieces"][0]["kind"] == "unknown"
+
+
+def test_free_roots_without_corroboration_are_unverified(api):
+    # Retrieval is stubbed to [] in tests, so blackboard's free roots have
+    # no corroboration and status degrades honestly.
+    client, _ = api
+    body = client.get("/lookup", params={"word": "blackboard"}).json()
+    assert body["status"] == "unverified"
+    assert all(not m["verified"] for m in body["morphemes"])
+    assert "0 of 2 morphemes verified" in body["status_note"]
+
+
+def test_corroborated_etymology_attaches_citation(api, monkeypatch):
+    from app import main as main_module
+    from app.retrieve import EtymologyRecord
+
+    client, _ = api
+    url = "https://kaikki.org/dictionary/English/meaning/t/te/telegram.jsonl"
+    monkeypatch.setattr(
+        main_module.retrieve_module, "retrieve",
+        lambda conn, word, **kw: [EtymologyRecord(
+            word, "noun", "From tele- (far) + -gram (written character).",
+            "kaikki_api", url,
+        )],
+    )
+    body = client.get("/lookup", params={"word": "telegram"}).json()
+    assert body["status"] == "grounded"
+    assert body["etymology"][0]["url"] == url
+    tele = next(m for m in body["morphemes"] if m["surface"] == "tele")
+    assert url in tele["citations"]
+
+
+def test_lookup_populates_review_queue(api):
+    client, db_path = api
+    client.get("/lookup", params={"word": "hydrophobia"})
+    conn = connect(db_path)
+    surfaces = {r["surface"] for r in conn.execute(
+        "SELECT surface FROM review_queue WHERE seen_in = 'hydrophobia'"
+    )}
+    conn.close()
+    # hydro|phob|ia — all reviewed=0 seed rows, queued for curation.
+    assert {"hydro", "phob", "ia"} <= surfaces
+
+
+def test_llm_disabled_falls_back_to_cost_order(api):
+    client, _ = api
+    body = client.get("/lookup", params={"word": "blackboard"}).json()
+    assert body["chosen_index"] == 0
+    assert body["rerank"] is None
+    assert [m["surface"] for m in body["morphemes"]] == [
+        p["surface"] for p in body["candidates"][0]["pieces"]
+    ]
+    assert "LLM calls disabled" in body["status_note"]
+    assert body["literal_meaning"] is None
+    assert body["modern_usage"] is None
+
+
+def test_rerank_choice_selects_segmentation(api, monkeypatch):
+    from app import assemble as assemble_module
+    from app import llm
+    from app import rerank as rerank_module
+
+    client, db_path = api
+    monkeypatch.setattr(llm, "is_enabled", lambda: True)
+    monkeypatch.setattr(
+        rerank_module, "rerank",
+        lambda word, cands, call=None: rerank_module.RerankResult(1, "second is right"),
+    )
+    monkeypatch.setattr(
+        assemble_module, "assemble",
+        lambda word, morphemes, texts, call=None: assemble_module.AssembleResult(
+            "to make into a union", "to organize workers"
+        ),
+    )
+    body = client.get("/lookup", params={"word": "unionize"}).json()
+    assert body["chosen_index"] == 1
+    assert [m["surface"] for m in body["morphemes"]] == [
+        p["surface"] for p in body["candidates"][1]["pieces"]
+    ]
+    assert body["rerank"]["reason"] == "second is right"
+    assert body["literal_meaning"] == "to make into a union"
+    assert body["modern_usage"] == "to organize workers"
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT payload FROM word_cache WHERE word = 'unionize'"
+    ).fetchone()
+    conn.close()
+    assert row is not None  # successful rerank+assemble is cached
+    cached = json.loads(row["payload"])
+    assert cached["chosen_index"] == 1
+    assert cached["modern_usage"] == "to organize workers"
+
+
+def test_rerank_failure_serves_but_does_not_cache(api, monkeypatch):
+    from app import llm
+    from app import rerank as rerank_module
+
+    client, db_path = api
+    monkeypatch.setattr(llm, "is_enabled", lambda: True)
+    monkeypatch.setattr(
+        rerank_module, "rerank", lambda word, cands, call=None: None
+    )
+    body = client.get("/lookup", params={"word": "photosynthesis"}).json()
+    assert body["chosen_index"] == 0
+    assert body["rerank"] is None
+    assert "uncached" in body["status_note"]
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT word FROM word_cache WHERE word = 'photosynthesis'"
+    ).fetchone()
+    conn.close()
+    assert row is None  # degraded response must not be frozen
+
+
+def test_assemble_failure_serves_but_does_not_cache(api, monkeypatch):
+    from app import assemble as assemble_module
+    from app import llm
+    from app import rerank as rerank_module
+
+    client, db_path = api
+    monkeypatch.setattr(llm, "is_enabled", lambda: True)
+    monkeypatch.setattr(
+        rerank_module, "rerank",
+        lambda word, cands, call=None: rerank_module.RerankResult(0, "top is fine"),
+    )
+    monkeypatch.setattr(
+        assemble_module, "assemble", lambda word, morphemes, texts, call=None: None
+    )
+    body = client.get("/lookup", params={"word": "neuropathology"}).json()
+    assert body["literal_meaning"] is None
+    assert "prose assembly failed" in body["status_note"]
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT word FROM word_cache WHERE word = 'neuropathology'"
+    ).fetchone()
+    conn.close()
+    assert row is None
+
+
+def test_no_facts_means_null_prose_and_still_cached(api):
+    # strengths: no morpheme carries an authoritative meaning, so prose
+    # fields are omitted honestly — and that IS the complete answer: cache it.
+    client, db_path = api
+    body = client.get("/lookup", params={"word": "strengths"}).json()
+    assert body["literal_meaning"] is None
+    assert "prose fields omitted" in body["status_note"]
+    conn = connect(db_path)
+    row = conn.execute(
+        "SELECT word FROM word_cache WHERE word = 'strengths'"
+    ).fetchone()
+    conn.close()
+    assert row is not None
