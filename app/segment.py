@@ -48,6 +48,9 @@ FREE_WHOLE_PER_CHAR = 0.35  # ... must lose to any decent decomposition
 FREE_WHOLE_MAX_RANK = 3000  # only common words earn a whole-word candidate;
                             # learned vocabulary (therapist, monolith) must
                             # still decompose
+FUNCTION_WHOLE_COST = 0.5   # a function word as the whole query never has
+                            # affix morphology: its whole reading beats any
+                            # split (they must not become the|y "god")
 
 LINKING_VOWELS = "oi"
 MAX_EXPANSIONS = 5000
@@ -140,7 +143,9 @@ def _build_edges(word: str, lex: Lexicon) -> list[list[_Edge]]:
                     # reading — it saves that/know/phone from junk splits,
                     # while rarer learned words must still decompose.
                     rank = lex.freq_rank.get(sub)
-                    if rank is not None and rank <= FREE_WHOLE_MAX_RANK:
+                    if sub in FUNCTION_WORDS:
+                        add(i, j, sub, None, FREE, (), FUNCTION_WHOLE_COST)
+                    elif rank is not None and rank <= FREE_WHOLE_MAX_RANK:
                         add(i, j, sub, None, FREE, (),
                             FREE_WHOLE_BASE + FREE_WHOLE_PER_CHAR * n)
                 else:

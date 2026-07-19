@@ -205,3 +205,9 @@ def test_rare_words_get_no_whole_candidate(lex):
     # therapist is beyond the frequency gate: it must decompose, and the
     # whole-word reading must not even be offered.
     assert ["therapist"] not in [surfaces(c) for c in segment("therapist", lex)]
+
+
+def test_function_word_query_never_decomposes(lex):
+    # they = the(theos 'god') + -y was beating the whole-word reading.
+    for word in ("they", "that", "with", "would"):
+        assert surfaces(segment(word, lex)[0]) == [word], word
