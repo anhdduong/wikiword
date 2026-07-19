@@ -170,3 +170,33 @@ def call_structured(
     if response.stop_reason == "refusal":
         raise RuntimeError("model refused the request")
     return next(b.text for b in response.content if b.type == "text")
+
+
+if __name__ == "__main__":
+    # Self-test: `python -m app.llm` — one real structured call, so a broken
+    # key/quota/model shows its actual error instead of a silent fallback.
+    which = provider()
+    print(f"provider: {which}")
+    if which == "none":
+        print("no credentials found (set GEMINI_API_KEY or Anthropic creds)")
+        raise SystemExit(1)
+    print(f"model: {resolved_model('claude-opus-4-8')}")
+    fmt = {
+        "type": "json_schema",
+        "schema": {
+            "type": "object",
+            "properties": {"ok": {"type": "boolean"}},
+            "required": ["ok"],
+            "additionalProperties": False,
+        },
+    }
+    try:
+        raw = call_structured(
+            "claude-opus-4-8", "Reply as instructed.",
+            'Return {"ok": true}.', fmt,
+        )
+        print(f"response: {raw.strip()}")
+        print("LLM call OK")
+    except Exception as exc:
+        print(f"LLM call FAILED: {exc}")
+        raise SystemExit(1)

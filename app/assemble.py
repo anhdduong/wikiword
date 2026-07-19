@@ -13,12 +13,15 @@ response ships null prose fields rather than invented ones.
 from __future__ import annotations
 
 import json
+import logging
 import os
 from dataclasses import dataclass
 from typing import Callable, Sequence
 
 from app import llm
 from app.ground import GroundedMorpheme
+
+log = logging.getLogger(__name__)
 
 ASSEMBLE_MODEL = os.environ.get("WIKIWORD_ASSEMBLE_MODEL", "claude-opus-4-8")
 PROMPT_VERSION = "assemble-v2"  # v2: dropped example_sentence
@@ -109,5 +112,6 @@ def assemble(
             literal_meaning=str(data["literal_meaning"]),
             modern_usage=str(data["modern_usage"]),
         )
-    except Exception:
+    except Exception as exc:
+        log.warning("assemble(%s) failed: %s", word, exc)
         return None

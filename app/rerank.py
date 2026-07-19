@@ -13,12 +13,15 @@ outlive a prompt or model change (plan §4).
 from __future__ import annotations
 
 import json
+import logging
 import os
 from dataclasses import dataclass
 from typing import Callable
 
 from app import llm
 from app.segment import Candidate
+
+log = logging.getLogger(__name__)
 
 RERANK_MODEL = os.environ.get("WIKIWORD_RERANK_MODEL", "claude-opus-4-8")
 PROMPT_VERSION = "rerank-v1"
@@ -106,10 +109,13 @@ def rerank(
         data = json.loads(raw)
         choice = data["choice"]
         reason = data["reason"]
-    except Exception:
+    except Exception as exc:
+        log.warning("rerank(%s) failed: %s", word, exc)
         return None
     if not isinstance(choice, int) or isinstance(choice, bool):
+        log.warning("rerank(%s): non-integer choice %r", word, choice)
         return None
     if not 0 <= choice < len(candidates):
+        log.warning("rerank(%s): choice %r out of range", word, choice)
         return None
     return RerankResult(choice, str(reason))
