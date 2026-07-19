@@ -24,7 +24,8 @@ from app.ground import GroundedMorpheme
 log = logging.getLogger(__name__)
 
 ASSEMBLE_MODEL = os.environ.get("WIKIWORD_ASSEMBLE_MODEL", "claude-opus-4-8")
-PROMPT_VERSION = "assemble-v2"  # v2: dropped example_sentence
+PROMPT_VERSION = "assemble-v3"  # v3: unverified morphemes may take their
+                                # sense from the fetched etymology text
 
 ASSEMBLE_SYSTEM = """\
 You write the prose fields of an etymology reference entry. You are given a \
@@ -39,8 +40,11 @@ morpheme meanings alone (e.g. "Relating to a single stone.").
 - modern_usage: one short sentence on how the word is used today, staying \
 consistent with the provided facts (e.g. "Large, powerful, and uniform \
 (like a massive, immovable stone structure).").
-- Morphemes marked [unverified] have no confirmed meaning; do not assert \
-anything about them."""
+- Morphemes marked [unverified] have no confirmed meaning in the affix \
+table; say nothing about them unless the fetched etymology text itself \
+states their meaning — then use exactly the sense that text states (e.g. \
+if it says alone is literally "all one", the literal_meaning may be \
+"All one.")."""
 
 _OUTPUT_FORMAT = {
     "type": "json_schema",
