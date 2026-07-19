@@ -176,3 +176,32 @@ def test_deterministic(lex):
 def test_costs_are_ordered(lex):
     cands = segment("monolithic", lex)
     assert cands == sorted(cands, key=lambda c: c.cost)
+
+
+def test_common_whole_word_beats_junk_split(lex):
+    # Everyday monomorphemic words must not be shredded (that -> tha|t).
+    # Frequency-gated: only common words earn the whole-word reading.
+    for word in ("that", "know", "once"):
+        cands = segment(word, lex)
+        assert surfaces(cands[0]) == [word], word
+        assert kinds(cands[0]) == ["free"], word
+
+
+def test_phone_not_split_into_greek_root(lex):
+    # phon|e grounds "phone" to Greek phone 'sound' and triggers a false
+    # conflict with the retrieved etymology; the whole word must win.
+    assert surfaces(segment("phone", lex)[0]) == ["phone"]
+
+
+def test_compound_still_beats_whole_word(lex):
+    # understand is common enough for a whole-word candidate, but the
+    # two-free-root decomposition is cheaper and stays on top.
+    cands = segment("understand", lex)
+    assert surfaces(cands[0]) == ["under", "stand"]
+    assert ["understand"] in [surfaces(c) for c in cands]
+
+
+def test_rare_words_get_no_whole_candidate(lex):
+    # therapist is beyond the frequency gate: it must decompose, and the
+    # whole-word reading must not even be offered.
+    assert ["therapist"] not in [surfaces(c) for c in segment("therapist", lex)]

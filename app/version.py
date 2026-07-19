@@ -20,6 +20,7 @@ def model_version() -> str:
         s.KNOWN_BASE, s.UNREVIEWED_PENALTY, s.FREE_BASE, s.FREE_PER_CHAR,
         s.LINKER_COST, s.UNKNOWN_BASE, s.UNKNOWN_PER_CHAR,
         s.FUNCTION_WORD_PENALTY, s.MIXED_ROOT_PENALTY,
+        s.FREE_WHOLE_BASE, s.FREE_WHOLE_PER_CHAR, s.FREE_WHOLE_MAX_RANK,
         # LLM calls: model ids + both prompt templates + which provider (if
         # any) serves them (plan §4). A no-credentials deployment must not
         # serve cache written by an LLM-enabled one, nor Gemini-written

@@ -42,6 +42,12 @@ UNKNOWN_BASE = 4.0          # any unknown span
 UNKNOWN_PER_CHAR = 0.6      # ... plus per uncovered character
 FUNCTION_WORD_PENALTY = 3.0  # 'the' et al. posing as a root
 MIXED_ROOT_PENALTY = 2.0    # free root directly adjacent to a learned root
+FREE_WHOLE_BASE = 2.0       # whole-word candidate for everyday words
+FREE_WHOLE_PER_CHAR = 0.35  # ... must lose to any decent decomposition
+                            # (some|thing beats something; that beats tha|t)
+FREE_WHOLE_MAX_RANK = 3000  # only common words earn a whole-word candidate;
+                            # learned vocabulary (therapist, monolith) must
+                            # still decompose
 
 LINKING_VOWELS = "oi"
 MAX_EXPANSIONS = 5000
@@ -127,13 +133,23 @@ def _build_edges(word: str, lex: Lexicon) -> list[list[_Edge]]:
                 if kind == ROOT and j + 1 < n and word[j] in LINKING_VOWELS:
                     add(i, j + 1, sub, word[j], kind, ids, cost + LINKER_COST)
 
-            if sub in lex.free_words and not (i == 0 and j == n):
-                cost = FREE_BASE + FREE_PER_CHAR * len(sub) + (
-                    FUNCTION_WORD_PENALTY if sub in FUNCTION_WORDS else 0.0
-                )
-                add(i, j, sub, None, FREE, (), cost)
-                if j + 1 < n and word[j] in LINKING_VOWELS:
-                    add(i, j + 1, sub, word[j], FREE, (), cost + LINKER_COST)
+            if sub in lex.free_words:
+                if i == 0 and j == n:
+                    # The whole word as a single piece: only common everyday
+                    # words (frequency-gated) get this "no decomposition"
+                    # reading — it saves that/know/phone from junk splits,
+                    # while rarer learned words must still decompose.
+                    rank = lex.freq_rank.get(sub)
+                    if rank is not None and rank <= FREE_WHOLE_MAX_RANK:
+                        add(i, j, sub, None, FREE, (),
+                            FREE_WHOLE_BASE + FREE_WHOLE_PER_CHAR * n)
+                else:
+                    cost = FREE_BASE + FREE_PER_CHAR * len(sub) + (
+                        FUNCTION_WORD_PENALTY if sub in FUNCTION_WORDS else 0.0
+                    )
+                    add(i, j, sub, None, FREE, (), cost)
+                    if j + 1 < n and word[j] in LINKING_VOWELS:
+                        add(i, j + 1, sub, word[j], FREE, (), cost + LINKER_COST)
 
     edges_from: list[list[_Edge]] = [[] for _ in range(n + 1)]
     for (start, end, surface, linker, kind), slot in sorted(merged.items()):
