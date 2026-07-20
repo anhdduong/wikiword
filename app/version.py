@@ -13,10 +13,16 @@ from app import segment as s
 
 _ALGORITHM_TAG = "segment-rerank-v1"  # bump on structural algorithm changes
 
+# Bump whenever main.py's payload shape or lookup orchestration changes:
+# cached payloads predating the change then evict themselves. (Lives here,
+# not in main.py, because main imports this module.)
+PAYLOAD_VERSION = "payload-v2"  # v2: unrecognized flag + suggestions
+
 
 def model_version() -> str:
     key = repr((
         _ALGORITHM_TAG,
+        PAYLOAD_VERSION,
         s.KNOWN_BASE, s.UNREVIEWED_PENALTY, s.FREE_BASE, s.FREE_PER_CHAR,
         s.LINKER_COST, s.UNKNOWN_BASE, s.UNKNOWN_PER_CHAR,
         s.FUNCTION_WORD_PENALTY, s.MIXED_ROOT_PENALTY,
