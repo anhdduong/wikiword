@@ -93,9 +93,8 @@
       {#if data.suggestions?.length}
         <p class="suggestions">
           did you mean:
-          {#each data.suggestions as s}
-            <button class="link" onclick={() => { word = s; lookup(); }}>{s}</button>
-          {/each}
+          {#each data.suggestions as s, i}{#if i},
+            {/if}<button class="link" onclick={() => { word = s; lookup(); }}>{s}</button>{/each}?
         </p>
       {/if}
 
