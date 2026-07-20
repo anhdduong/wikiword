@@ -19,7 +19,7 @@ import os
 import urllib.error
 import urllib.request
 
-GEMINI_MODEL = os.environ.get("WIKIWORD_GEMINI_MODEL", "gemini-flash-latest")
+GEMINI_MODEL = os.environ.get("WIKIWORD_GEMINI_MODEL", "gemini-flash-lite-latest")
 GEMINI_TIMEOUT_S = 60
 
 _client = None
