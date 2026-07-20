@@ -67,7 +67,7 @@ def test_blackboard_free_roots_corroborated(db, lex):
     assert g.status == "grounded"
     for m in g.morphemes:
         assert m.verified
-        assert m.type == "root"
+        assert m.type == "word"  # free pieces are words, not table roots
         assert m.citations == ("https://kaikki.org/blackboard.jsonl",)
         assert m.meaning is None  # no authoritative meaning; never invented
 

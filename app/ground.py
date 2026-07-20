@@ -24,10 +24,12 @@ import sqlite3
 from dataclasses import dataclass
 
 from app.retrieve import EtymologyRecord, prose
-from app.segment import COMBINING, FREE, ROOT, UNKNOWN, Candidate
+from app.segment import COMBINING, FREE, UNKNOWN, Candidate
 
-GROUND_VERSION = "ground-v3"  # v3: sense choice prefers origin-language
-                              # agreement with the mentioning prose
+GROUND_VERSION = "ground-v4"  # v4: free-word pieces surface as type "word"
+                              # (they were never affix-table roots)
+
+WORD = "word"  # display type for free-word pieces
 
 LANG_KEYWORDS = frozenset(
     "greek latin english french german norse dutch italian spanish arabic "
@@ -38,7 +40,7 @@ LANG_KEYWORDS = frozenset(
 @dataclass(frozen=True)
 class GroundedMorpheme:
     surface: str
-    type: str  # prefix | root | suffix | combining_form | unknown
+    type: str  # prefix | root | suffix | combining_form | word | unknown
     origin: str | None
     source_form: str | None
     meaning: str | None
@@ -125,7 +127,7 @@ def ground(
                     if r.url and _mentions(r.text, [piece.surface])
                 )
                 morphemes.append(GroundedMorpheme(
-                    surface=piece.surface, type=ROOT, origin=None,
+                    surface=piece.surface, type=WORD, origin=None,
                     source_form=None, meaning=None,
                     verified=bool(corroborating),
                     citations=corroborating,

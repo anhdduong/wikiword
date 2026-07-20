@@ -128,6 +128,8 @@
             {/if}
             {#if m.meaning}
               <div class="meaning">“{m.meaning}”</div>
+            {:else if m.type === 'word'}
+              <div class="meaning none">everyday English word — see dictionary</div>
             {:else}
               <div class="meaning none">no verified meaning</div>
             {/if}
