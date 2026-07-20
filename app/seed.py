@@ -63,6 +63,16 @@ def seed(conn: sqlite3.Connection, csv_path: Path = SEED_CSV) -> dict[str, int]:
                 [(form, affix_id) for form in forms],
             )
             stats["forms"] += len(forms)
+
+    # New rows change what the segmenter can match, but the lexicon isn't
+    # part of model_version — clear the cache so stale segmentations can't
+    # be served. (Same rule as admin mutations. A running server must still
+    # be restarted to reload its in-memory lexicon.)
+    if stats["inserted"]:
+        with conn:
+            stats["cache_cleared"] = conn.execute(
+                "DELETE FROM word_cache"
+            ).rowcount
     return stats
 
 
@@ -73,3 +83,6 @@ if __name__ == "__main__":
     stats = seed(conn)
     print(f"Seeded {db_path}: {stats['inserted']} inserted, "
           f"{stats['updated']} updated, {stats['forms']} forms")
+    if stats["inserted"]:
+        print(f"word_cache cleared ({stats['cache_cleared']} rows) — restart"
+              " the server to reload the lexicon")
