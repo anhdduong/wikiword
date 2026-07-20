@@ -106,6 +106,7 @@ neur,root,Ancient Greek,neuron,"nerve, sinew",νεῦρον,neur|neuro,neuro-
 opt,root,Ancient Greek,optos,"seen, visible; eye",ὀπτός,opt|opto,opto-
 pyr,root,Ancient Greek,pur,fire,πῦρ,pyr|pyro,pyro-
 the,root,Ancient Greek,theos,god,"θεός; form 'the' collides with the English article — expect cost-function reliance",the|theo,theo-
+ton,root,Ancient Greek,tonos,"tone, pitch, tension",τόνος; in monotonous/monotone/tonic,ton|tono|tone,tono-
 top,root,Ancient Greek,topos,place,τόπος,top|topo,topo-
 polis,root,Ancient Greek,polis,"city, city-state",πόλις,polis|poli|pol,-polis
 paed,root,Ancient Greek,pais,child,"παῖς, genitive παιδός; distinct from Latin ped 'foot'",paed|ped|pedo,paedo-
@@ -164,7 +165,7 @@ volv,root,Latin,volvere,"to roll, turn",,volv|volut,volvere
 -ory,suffix,Latin,-orius,"relating to; place for",,ory,-ory
 -ive,suffix,Latin,-ivus,"tending to, having the nature of",,ive,-ive
 -able,suffix,Latin,-abilis,"capable of being",via Old French,able|ible,-able
--tion,suffix,Latin,-tio,"act or result of",,tion|sion,-tion
+-tion,suffix,Latin,-tio,"act or result of",,tion|sion|ation|ition,-tion
 -ion,suffix,Latin,-io,"act, state, result",,ion,-ion
 -ment,suffix,Latin,-mentum,"result or means of an action",,ment,-ment
 -ity,suffix,Latin,-itas,"state or quality of",,ity|ety,-ity
