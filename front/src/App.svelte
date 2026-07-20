@@ -90,6 +90,15 @@
         <p class="status-note">{data.status_note}</p>
       {/if}
 
+      {#if data.suggestions?.length}
+        <p class="suggestions">
+          did you mean:
+          {#each data.suggestions as s}
+            <button class="link" onclick={() => { word = s; lookup(); }}>{s}</button>
+          {/each}
+        </p>
+      {/if}
+
       {#if data.conflicts?.length}
         <div class="box conflict">
           <strong>⚠ source conflict</strong>
@@ -309,6 +318,15 @@
     color: #6d6558;
     font-size: 0.9rem;
     margin: 0.5rem 0 0;
+  }
+  .suggestions {
+    color: #6d6558;
+    font-size: 0.95rem;
+    margin: 0.4rem 0 0;
+  }
+  .suggestions button.link {
+    font-size: 0.95rem;
+    margin-right: 0.5rem;
   }
   .morphemes {
     display: flex;
