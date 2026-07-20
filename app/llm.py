@@ -127,9 +127,16 @@ def _call_gemini(system: str, user: str, schema: dict) -> str:
         "generationConfig": {
             "responseMimeType": "application/json",
             "responseSchema": _gemini_schema(schema),
+            # Flash models "think" by default, which multiplies latency
+            # several-fold; these closed-set tasks don't need it.
+            "thinkingConfig": {"thinkingBudget": 0},
         },
     }
     status, body = _http_post(url, payload, {"x-goog-api-key": _gemini_key()})
+    if status == 400:
+        # Some models reject a zero thinking budget; retry without the cap.
+        payload["generationConfig"].pop("thinkingConfig")
+        status, body = _http_post(url, payload, {"x-goog-api-key": _gemini_key()})
     if status != 200:
         raise RuntimeError(f"Gemini HTTP {status}: {body[:200]!r}")
     data = json.loads(body)

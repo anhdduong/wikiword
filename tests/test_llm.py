@@ -73,6 +73,25 @@ def test_call_gemini_joins_text_and_skips_thoughts(no_anthropic, monkeypatch):
     gc = payload["generationConfig"]
     assert gc["responseMimeType"] == "application/json"
     assert gc["responseSchema"]["type"] == "OBJECT"
+    # Thinking is off: it multiplies latency for these closed-set tasks.
+    assert gc["thinkingConfig"] == {"thinkingBudget": 0}
+
+
+def test_call_gemini_retries_without_thinking_cap_on_400(no_anthropic, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    posts = []
+
+    def fake_post(url, payload, headers):
+        posts.append(json.loads(json.dumps(payload)))
+        if "thinkingConfig" in payload["generationConfig"]:
+            return 400, b'{"error": "budget 0 not supported"}'
+        return 200, GEMINI_OK
+
+    monkeypatch.setattr(llm, "_http_post", fake_post)
+    out = llm._call_gemini("s", "u", RERANK_FORMAT["schema"])
+    assert json.loads(out)["choice"] == 1
+    assert len(posts) == 2
+    assert "thinkingConfig" not in posts[1]["generationConfig"]
 
 
 def test_call_gemini_http_error_raises(no_anthropic, monkeypatch):
