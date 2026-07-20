@@ -337,3 +337,44 @@ def test_no_facts_means_null_prose_and_still_cached(api):
     ).fetchone()
     conn.close()
     assert row is not None
+
+
+def insert_negative_etymology(db_path, word):
+    conn = connect(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO etymology (word, etymology_text, source)"
+            " VALUES (?, NULL, 'none')", (word,),
+        )
+    conn.close()
+
+
+def test_unrecognized_word_flags_misspelling(api):
+    # "therapis" segments plausibly, but it's not in the wordlist and every
+    # source definitively lacks it (negative-cache row): flag it, suggest
+    # the real word, and never invent a modern usage for it.
+    client, db_path = api
+    insert_negative_etymology(db_path, "therapis")
+    resp = client.get("/lookup", params={"word": "therapis"})
+    body = resp.json()
+    assert "possible misspelling" in body["status_note"]
+    assert "therapist" in body["suggestions"]
+    assert body["modern_usage"] is None
+
+
+def test_unfetched_word_is_not_flagged_as_misspelling(api):
+    # No negative-cache row (e.g. transport failure): absence of evidence
+    # is not evidence of absence, so no misspelling flag.
+    client, _ = api
+    resp = client.get("/lookup", params={"word": "qzxvqx"})
+    body = resp.json()
+    assert "misspelling" not in (body["status_note"] or "")
+    assert body["suggestions"] == []
+
+
+def test_real_word_is_not_flagged(api):
+    client, _ = api
+    resp = client.get("/lookup", params={"word": "blackboard"})
+    body = resp.json()
+    assert "misspelling" not in (body["status_note"] or "")
+    assert body["suggestions"] == []

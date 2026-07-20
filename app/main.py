@@ -11,6 +11,7 @@ threadpool FastAPI runs sync endpoints on).
 
 from __future__ import annotations
 
+import difflib
 import json
 import re
 from concurrent.futures import ThreadPoolExecutor
@@ -108,6 +109,31 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                     seen_prose.add(p)
                     records.append(r)
 
+            # A word absent from the frequency wordlist that every source
+            # definitively doesn't know is probably a misspelling: flag it,
+            # suggest close wordlist matches, and never synthesize a modern
+            # usage for it — no dictionary knows it, so there is no grounded
+            # basis for one. Transport failures leave no negative-cache row
+            # and so never trigger this.
+            unrecognized = (
+                not records
+                and w not in app.state.lexicon.free_words
+                and conn.execute(
+                    "SELECT 1 FROM etymology WHERE word = ?"
+                    " AND etymology_text IS NULL",
+                    (w,),
+                ).fetchone() is not None
+            )
+            suggestions = (
+                difflib.get_close_matches(
+                    w, app.state.lexicon.free_words, n=3, cutoff=0.8)
+                if unrecognized else []
+            )
+            unrecognized_note = (
+                "word not found in any dictionary source — possible"
+                " misspelling" if unrecognized else None
+            )
+
             result = None
             rerank_degraded = False
             if llm_enabled:
@@ -154,12 +180,16 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                         )
                     else:
                         literal = assembled.literal_meaning
-                        modern = assembled.modern_usage
+                        modern = None if unrecognized else assembled.modern_usage
             else:
                 # The literal sense needs glosses, but the dictionary
-                # definition is independently grounded — fetch it regardless.
+                # definition is independently grounded — fetch it regardless
+                # (except for unrecognized words, which no dictionary has).
                 literal = compose_module.literal_meaning(grounding.morphemes)
-                modern, definitive = compose_module.fetch_definition(w)
+                if unrecognized:
+                    modern, definitive = None, True
+                else:
+                    modern, definitive = compose_module.fetch_definition(w)
                 assemble_degraded = not definitive
                 fallback_parts = [
                     "literal sense composed from affix glosses" if literal else
@@ -176,13 +206,15 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                 assemble_note = "; ".join(fallback_parts)
 
             note_parts = [
-                p for p in (grounding.status_note, assemble_note, note) if p
+                p for p in (unrecognized_note, grounding.status_note,
+                            assemble_note, note) if p
             ]
 
             payload = {
                 "word": w,
                 "status": grounding.status,
                 "status_note": "; ".join(note_parts) or None,
+                "suggestions": suggestions,
                 "literal_meaning": literal,
                 "modern_usage": modern,
                 "morphemes": [asdict(m) for m in grounding.morphemes],
