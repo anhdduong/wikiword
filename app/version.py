@@ -27,6 +27,7 @@ def model_version() -> str:
         # serve cache written by an LLM-enabled one, nor Gemini-written
         # cache pass for Anthropic-written, and vice versa.
         rerank.RERANK_MODEL, rerank.PROMPT_VERSION, rerank.RERANK_SYSTEM,
+        rerank.RERANK_MARGIN,
         assemble.ASSEMBLE_MODEL, assemble.PROMPT_VERSION, assemble.ASSEMBLE_SYSTEM,
         llm.is_enabled(), llm.provider(), llm.GEMINI_MODEL,
         ground.GROUND_VERSION,

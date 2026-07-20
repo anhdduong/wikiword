@@ -6,7 +6,7 @@ from app.db import connect, migrate
 from app.lexicon import load_lexicon
 from app.seed import seed
 from app.segment import segment
-from app.rerank import RERANK_SYSTEM, build_user_prompt, rerank
+from app.rerank import RERANK_MARGIN, RERANK_SYSTEM, build_user_prompt, rerank
 
 
 @pytest.fixture(scope="module")
@@ -30,26 +30,50 @@ def fake_call(response_text):
 
 
 def test_rerank_returns_choice(lex):
-    cands = segment("therapist", lex)
-    call = fake_call(json.dumps({"choice": 0, "reason": "therap+ist is the Greek analysis"}))
-    result = rerank("therapist", cands, call=call)
+    cands = segment("monolithic", lex)  # close margin: the LLM is consulted
+    call = fake_call(json.dumps({"choice": 0, "reason": "mono+lith+ic is the Greek analysis"}))
+    result = rerank("monolithic", cands, call=call)
     assert result is not None
     assert result.choice == 0
     assert "Greek" in result.reason
+    assert call.calls
 
 
 def test_prompt_is_closed_set(lex):
-    cands = segment("therapist", lex)
+    cands = segment("monolithic", lex)
     call = fake_call(json.dumps({"choice": 0, "reason": "x"}))
-    rerank("therapist", cands, call=call)
+    rerank("monolithic", cands, call=call)
     system, user = call.calls[0]
     # The plan §4 constraint must be in the version-controlled system prompt.
     assert "only choose from the provided candidates" in system
     assert "Do not propose a new segmentation" in system
     # Every candidate index and the word appear in the user prompt.
-    assert "therapist" in user
+    assert "monolithic" in user
     for i in range(len(cands)):
         assert f"{i}." in user
+
+
+def test_wide_margin_skips_llm(lex):
+    # therap|ist beats the runner-up by a wide cost gap: the cost order
+    # stands and no API call is spent.
+    cands = segment("therapist", lex)
+    assert cands[1].cost - cands[0].cost >= RERANK_MARGIN
+    call = fake_call(json.dumps({"choice": 1, "reason": "x"}))
+    result = rerank("therapist", cands, call=call)
+    assert result is not None
+    assert result.choice == 0
+    assert "margin" in result.reason
+    assert call.calls == []
+
+
+def test_close_margin_consults_llm_and_can_override(lex):
+    cands = segment("alone", lex)  # al|one vs whole-word: genuinely close
+    assert cands[1].cost - cands[0].cost < RERANK_MARGIN
+    call = fake_call(json.dumps({"choice": 1, "reason": "whole word"}))
+    result = rerank("alone", cands, call=call)
+    assert result is not None
+    assert result.choice == 1
+    assert call.calls
 
 
 def test_user_prompt_renders_pieces(lex):

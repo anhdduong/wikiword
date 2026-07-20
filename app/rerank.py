@@ -25,6 +25,10 @@ log = logging.getLogger(__name__)
 
 RERANK_MODEL = os.environ.get("WIKIWORD_RERANK_MODEL", "claude-opus-4-8")
 PROMPT_VERSION = "rerank-v1"
+# Below this cost gap between the top two candidates the choice is genuinely
+# ambiguous and worth an LLM call; at or above it the cost order stands
+# without API spend. Hashed into model_version like the cost constants.
+RERANK_MARGIN = 0.75
 
 RERANK_SYSTEM = """\
 You are the segmentation reranker for an etymology reference tool. You are \
@@ -104,6 +108,11 @@ def rerank(
         return None
     if len(candidates) == 1:
         return RerankResult(0, "only one candidate")
+    margin = candidates[1].cost - candidates[0].cost
+    if margin >= RERANK_MARGIN:
+        return RerankResult(
+            0, f"clear cost margin (+{margin:.2f} to runner-up); rerank skipped"
+        )
     try:
         raw = call(RERANK_SYSTEM, build_user_prompt(word, candidates))
         data = json.loads(raw)
