@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -87,11 +88,30 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
             # llm_rerank (plan §4): closed-set choice; on any failure the
             # cost order stands. A *transient* failure must not be frozen
             # into the cache, so we serve the response but skip the write.
+            # The rerank call and the etymology fetch are independent, so
+            # the LLM call rides a worker thread while retrieval keeps the
+            # request thread (and its non-thread-safe DB connection).
             llm_enabled = llm_module.is_enabled()
+            rerank_future = None
+            if llm_enabled:
+                pool = ThreadPoolExecutor(max_workers=1)
+                rerank_future = pool.submit(rerank_module.rerank, w, candidates)
+                pool.shutdown(wait=False)
+
+            # kaikki repeats one etymology under several parts of speech;
+            # keep each distinct prose text once.
+            records = []
+            seen_prose: set[str] = set()
+            for r in retrieve_module.retrieve(conn, w):
+                p = prose(r.text)
+                if p not in seen_prose:
+                    seen_prose.add(p)
+                    records.append(r)
+
             result = None
             rerank_degraded = False
             if llm_enabled:
-                result = rerank_module.rerank(w, candidates)
+                result = rerank_future.result()
                 rerank_degraded = result is None and len(candidates) > 1
                 note = (
                     None
@@ -105,15 +125,6 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
 
             # ground() + status() (plan §5): verify the chosen segmentation
             # against the affix table and retrieved etymology.
-            # kaikki repeats one etymology under several parts of speech;
-            # keep each distinct prose text once.
-            records = []
-            seen_prose: set[str] = set()
-            for r in retrieve_module.retrieve(conn, w):
-                p = prose(r.text)
-                if p not in seen_prose:
-                    seen_prose.add(p)
-                    records.append(r)
             grounding = ground_module.ground(
                 conn, w, candidates[chosen_index], records
             )
