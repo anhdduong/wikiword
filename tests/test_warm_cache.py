@@ -42,3 +42,18 @@ def test_warm_stops_on_consecutive_degraded(tmp_path, monkeypatch):
     stats = warm(words, db, sleep_s=0, stop_after=3, log=quiet)
     assert stats["degraded"] == 3  # stopped at the third, not all six
     assert stats["warmed"] == 0
+
+
+def test_zero_call_successes_do_not_reset_the_stop_counter(tmp_path, monkeypatch):
+    # "that" warms without any fetch success (definitive miss, no prose) —
+    # it must not be treated as proof the quota is alive.
+    bad = {"monolithic", "blackboard", "chronology", "therapist"}
+    monkeypatch.setattr(
+        compose, "fetch_definition",
+        lambda word, http_get=None: (None, word not in bad),
+    )
+    db = make_db(tmp_path)
+    words = ["monolithic", "blackboard", "that", "chronology", "therapist"]
+    stats = warm(words, db, sleep_s=0, stop_after=3, log=quiet)
+    assert stats["degraded"] == 3  # stopped at chronology despite "that"
+    assert stats["warmed"] == 1  # "that" itself still got cached

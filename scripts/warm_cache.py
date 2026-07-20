@@ -57,18 +57,25 @@ def warm(
             if resp.status_code != 200:
                 stats["errors"] += 1
                 continue
-            note = resp.json().get("status_note") or ""
+            body = resp.json()
+            note = body.get("status_note") or ""
             if "uncached" in note:
                 stats["degraded"] += 1
-                consecutive += 1
-                if consecutive >= stop_after:
-                    log(f"stopping after {consecutive} consecutive degraded"
-                        " responses (LLM quota exhausted?); warmed words are"
-                        " cached — re-run later to resume")
-                    break
+                if "failed" in note:  # an LLM/fetch call actually failed
+                    consecutive += 1
+                    if consecutive >= stop_after:
+                        log(f"stopping after {consecutive} failed calls with"
+                            " no success in between (quota exhausted?);"
+                            " warmed words are cached — re-run later to"
+                            " resume")
+                        break
             else:
                 stats["warmed"] += 1
-                consecutive = 0
+                # Only a word that actually exercised a call successfully
+                # proves the quota is alive; words needing no LLM call
+                # (clear margins, no facts) must not reset the counter.
+                if body.get("literal_meaning") is not None:
+                    consecutive = 0
             if (i + 1) % 25 == 0:
                 log(f"... {i + 1}/{len(todo)} words")
     return stats
