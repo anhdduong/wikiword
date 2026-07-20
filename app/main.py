@@ -214,6 +214,7 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                 "word": w,
                 "status": grounding.status,
                 "status_note": "; ".join(note_parts) or None,
+                "unrecognized": unrecognized,
                 "suggestions": suggestions,
                 "literal_meaning": literal,
                 "modern_usage": modern,

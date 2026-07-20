@@ -147,9 +147,9 @@
 
       {#if data.literal_meaning || data.modern_usage}
         <div class="prose">
-          <h3>Literal and Modern Meaning</h3>
+          <h3>{data.unrecognized ? 'if it were a word' : 'Literal and Modern Meaning'}</h3>
           {#if data.literal_meaning}
-            <p><b>Literal definition:</b> {data.literal_meaning}</p>
+            <p><b>{data.unrecognized ? 'These morphemes would mean:' : 'Literal definition:'}</b> {data.literal_meaning}</p>
           {/if}
           {#if data.modern_usage}
             <p><b>Modern usage:</b> {data.modern_usage}</p>

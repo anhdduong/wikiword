@@ -358,6 +358,7 @@ def test_unrecognized_word_flags_misspelling(api):
     resp = client.get("/lookup", params={"word": "therapis"})
     body = resp.json()
     assert "possible misspelling" in body["status_note"]
+    assert body["unrecognized"] is True
     assert "therapist" in body["suggestions"]
     assert body["modern_usage"] is None
 
@@ -377,4 +378,5 @@ def test_real_word_is_not_flagged(api):
     resp = client.get("/lookup", params={"word": "blackboard"})
     body = resp.json()
     assert "misspelling" not in (body["status_note"] or "")
+    assert body["unrecognized"] is False
     assert body["suggestions"] == []
