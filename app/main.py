@@ -154,56 +154,54 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
             grounding = ground_module.ground(
                 conn, w, candidates[chosen_index], records
             )
-            # Prose fields. With the LLM: llm_assemble (plan §4), synthesized
-            # only from grounded facts. Without it: deterministic fallback —
-            # glosses joined for the literal sense, a fetched dictionary
-            # definition for modern usage. Either way, no facts -> null
-            # fields, never invented prose; a transient failure serves the
-            # response uncached, same rule as the rerank.
+            # Prose fields. literal_meaning: with the LLM, llm_assemble
+            # (plan §4) synthesized only from grounded facts; without it,
+            # glosses joined deterministically. Either way, no facts -> null
+            # field, never invented prose. modern_usage: always a dictionary
+            # definition quoted verbatim — fetched, never synthesized. A
+            # transient failure on either serves the response uncached, same
+            # rule as the rerank.
             prose_texts = [prose(r.text) for r in records]
-            literal = modern = None
+            literal = None
             assemble_degraded = False
-            assemble_note = None
+            prose_notes = []
             if llm_enabled:
                 if not assemble_module.has_facts(grounding.morphemes):
-                    assemble_note = (
-                        "no verified morpheme meanings; prose fields omitted"
+                    prose_notes.append(
+                        "no verified morpheme meanings; literal sense omitted"
                     )
                 else:
-                    assembled = assemble_module.assemble(
+                    literal = assemble_module.assemble(
                         w, grounding.morphemes, prose_texts
                     )
-                    if assembled is None:
+                    if literal is None:
                         assemble_degraded = True
-                        assemble_note = (
+                        prose_notes.append(
                             "prose assembly failed for this request (uncached)"
                         )
-                    else:
-                        literal = assembled.literal_meaning
-                        modern = None if unrecognized else assembled.modern_usage
             else:
-                # The literal sense needs glosses, but the dictionary
-                # definition is independently grounded — fetch it regardless
-                # (except for unrecognized words, which no dictionary has).
                 literal = compose_module.literal_meaning(grounding.morphemes)
-                if unrecognized:
-                    modern, definitive = None, True
-                else:
-                    modern, definitive = compose_module.fetch_definition(w)
-                assemble_degraded = not definitive
-                fallback_parts = [
+                prose_notes.append(
                     "literal sense composed from affix glosses" if literal else
                     "no verified morpheme meanings; literal sense omitted"
-                ]
-                if modern:
-                    fallback_parts.append(
-                        "modern usage quoted from Free Dictionary definition"
-                    )
-                elif not definitive:
-                    fallback_parts.append(
-                        "dictionary lookup failed for this request (uncached)"
-                    )
-                assemble_note = "; ".join(fallback_parts)
+                )
+            # The dictionary definition is independently grounded — fetch it
+            # even without glosses (except for unrecognized words, which no
+            # dictionary has).
+            if unrecognized:
+                modern, definitive = None, True
+            else:
+                modern, definitive = compose_module.fetch_definition(w)
+            if modern:
+                prose_notes.append(
+                    "modern usage quoted from Free Dictionary definition"
+                )
+            elif not definitive:
+                assemble_degraded = True
+                prose_notes.append(
+                    "dictionary lookup failed for this request (uncached)"
+                )
+            assemble_note = "; ".join(prose_notes) or None
 
             note_parts = [
                 p for p in (unrecognized_note, grounding.status_note,

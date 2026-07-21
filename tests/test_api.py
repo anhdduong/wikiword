@@ -193,9 +193,12 @@ def test_rerank_choice_selects_segmentation(api, monkeypatch):
     )
     monkeypatch.setattr(
         assemble_module, "assemble",
-        lambda word, morphemes, texts, call=None: assemble_module.AssembleResult(
-            "to make into a union", "to organize workers"
-        ),
+        lambda word, morphemes, texts, call=None: "to make into a union",
+    )
+    from app import compose as compose_module
+    monkeypatch.setattr(
+        compose_module, "fetch_definition",
+        lambda word, **kw: ("(verb) To organize workers.", True),
     )
     body = client.get("/lookup", params={"word": "unionize"}).json()
     assert body["chosen_index"] == 1
@@ -204,7 +207,8 @@ def test_rerank_choice_selects_segmentation(api, monkeypatch):
     ]
     assert body["rerank"]["reason"] == "second is right"
     assert body["literal_meaning"] == "to make into a union"
-    assert body["modern_usage"] == "to organize workers"
+    # modern_usage comes from the dictionary even when the LLM is enabled.
+    assert body["modern_usage"] == "(verb) To organize workers."
     conn = connect(db_path)
     row = conn.execute(
         "SELECT payload FROM word_cache WHERE word = 'unionize'"
@@ -213,7 +217,7 @@ def test_rerank_choice_selects_segmentation(api, monkeypatch):
     assert row is not None  # successful rerank+assemble is cached
     cached = json.loads(row["payload"])
     assert cached["chosen_index"] == 1
-    assert cached["modern_usage"] == "to organize workers"
+    assert cached["modern_usage"] == "(verb) To organize workers."
 
 
 def test_rerank_failure_serves_but_does_not_cache(api, monkeypatch):

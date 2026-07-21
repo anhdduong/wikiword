@@ -16,7 +16,7 @@ _ALGORITHM_TAG = "segment-rerank-v1"  # bump on structural algorithm changes
 # Bump whenever main.py's payload shape or lookup orchestration changes:
 # cached payloads predating the change then evict themselves. (Lives here,
 # not in main.py, because main imports this module.)
-PAYLOAD_VERSION = "payload-v2"  # v2: unrecognized flag + suggestions
+PAYLOAD_VERSION = "payload-v3"  # v3: modern_usage always dictionary-quoted
 
 
 def model_version() -> str:

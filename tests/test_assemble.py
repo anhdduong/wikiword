@@ -25,10 +25,7 @@ IC = gm("ic", "suffix", "Latin/Greek", "-icus/-ikos",
         "relating to, characterized by", True)
 UNKNOWN_S = gm("s", "unknown")
 
-GOOD = json.dumps({
-    "literal_meaning": "Relating to a single stone.",
-    "modern_usage": "Large, uniform, and immovable.",
-})
+GOOD = json.dumps({"literal_meaning": "Relating to a single stone."})
 
 
 def fake_call(response_text):
@@ -42,13 +39,11 @@ def fake_call(response_text):
     return call
 
 
-def test_assemble_returns_fields():
+def test_assemble_returns_literal_meaning():
     call = fake_call(GOOD)
     result = assemble("monolithic", [MONO, LITH, IC], ["From French monolithique."],
                       call=call)
-    assert result is not None
-    assert result.literal_meaning == "Relating to a single stone."
-    assert result.modern_usage == "Large, uniform, and immovable."
+    assert result == "Relating to a single stone."
 
 
 def test_prompt_carries_constraint_and_facts():
@@ -83,7 +78,7 @@ def test_no_facts_skips_llm_entirely():
 
 @pytest.mark.parametrize("bad", [
     "not json",
-    json.dumps({"literal_meaning": "x"}),  # missing fields
+    json.dumps({"modern_usage": "x"}),  # missing literal_meaning
 ])
 def test_invalid_response_returns_none(bad):
     assert assemble("monolithic", [MONO], [], call=fake_call(bad)) is None
