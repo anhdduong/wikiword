@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: wikiword-api
+    runtime: docker
+    plan: free
+    healthCheckPath: /docs
+    envVars:
+      - key: WIKIWORD_CORS_ORIGINS
+        value: ""
+      - key: WIKIWORD_ADMIN_USER
+        sync: false
+      - key: WIKIWORD_ADMIN_PASS
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
