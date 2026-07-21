@@ -1,5 +1,6 @@
 <script>
   import Admin from './Admin.svelte';
+  import { apiUrl } from './api.js';
 
   let view = $state('lookup');
   let word = $state('');
@@ -23,7 +24,7 @@
     data = null;
     showCandidates = false;
     try {
-      const resp = await fetch(`/lookup?word=${encodeURIComponent(w)}`);
+      const resp = await fetch(apiUrl(`/lookup?word=${encodeURIComponent(w)}`));
       const body = await resp.json();
       if (!resp.ok) throw new Error(body.detail ?? `HTTP ${resp.status}`);
       data = body;

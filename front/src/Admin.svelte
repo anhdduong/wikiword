@@ -1,4 +1,6 @@
 <script>
+  import { apiUrl } from './api.js';
+
   let entries = $state([]);
   let error = $state(null);
   let busy = $state(false);
@@ -11,7 +13,7 @@
   async function refresh() {
     error = null;
     try {
-      const resp = await fetch('/admin/queue');
+      const resp = await fetch(apiUrl('/admin/queue'), { credentials: 'include' });
       const body = await resp.json();
       if (!resp.ok) throw new Error(body.detail ?? `HTTP ${resp.status}`);
       entries = body.entries;
@@ -28,8 +30,9 @@
     busy = true;
     error = null;
     try {
-      const resp = await fetch(path, {
+      const resp = await fetch(apiUrl(path), {
         method: 'POST',
+        credentials: 'include',
         headers: body ? { 'content-type': 'application/json' } : {},
         body: body ? JSON.stringify(body) : undefined,
       });

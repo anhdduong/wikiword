@@ -13,12 +13,16 @@ from __future__ import annotations
 
 import difflib
 import json
+import os
 import re
+import secrets
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 
 from dataclasses import asdict
@@ -66,6 +70,19 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
 
     app = FastAPI(title="wikiword", lifespan=lifespan)
     app.state.db_path = db_path
+
+    # Split-host deploys (frontend on Vercel/GitHub Pages, backend here) need
+    # CORS; a single-server deploy where front/dist is mounted below never
+    # crosses origins, so this is opt-in via env var and a no-op otherwise.
+    cors_origins = os.environ.get("WIKIWORD_CORS_ORIGINS")
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[o.strip() for o in cors_origins.split(",") if o.strip()],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     @app.get("/lookup")
     def lookup(word: str):
@@ -253,6 +270,34 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
     from app.admin import router as admin_router
 
     app.include_router(admin_router)
+
+    # /admin is an unauthenticated local-curation tool (see app/admin.py); it
+    # must not be reachable by the public once this server is exposed to the
+    # internet. Gate it with HTTP Basic auth whenever credentials are
+    # configured; local/dev/test runs with no env vars set are unaffected.
+    admin_user = os.environ.get("WIKIWORD_ADMIN_USER")
+    admin_pass = os.environ.get("WIKIWORD_ADMIN_PASS")
+    if admin_user and admin_pass:
+        @app.middleware("http")
+        async def _admin_basic_auth(request: Request, call_next):
+            if request.url.path.startswith("/admin"):
+                auth = request.headers.get("authorization", "")
+                ok = False
+                if auth.startswith("Basic "):
+                    import base64
+                    try:
+                        raw = base64.b64decode(auth[6:]).decode()
+                        user, _, pw = raw.partition(":")
+                        ok = secrets.compare_digest(user, admin_user) and \
+                            secrets.compare_digest(pw, admin_pass)
+                    except Exception:
+                        ok = False
+                if not ok:
+                    return Response(
+                        status_code=401,
+                        headers={"WWW-Authenticate": 'Basic realm="admin"'},
+                    )
+            return await call_next(request)
 
     # Production serving: mount the built front end (front/dist) at /.
     # Registered after the API routes, so /lookup keeps priority. In dev,

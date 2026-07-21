@@ -1,0 +1,26 @@
+app = "wikiword-api"
+primary_region = "iad"
+
+[build]
+
+[env]
+  WIKIWORD_DB_PATH = "/data/wikiword.db"
+  # Set to your deployed frontend's origin(s), comma-separated, e.g.
+  # "https://wikiword.vercel.app". Required for the browser to be allowed
+  # to call this API from a different origin.
+  WIKIWORD_CORS_ORIGINS = ""
+
+[[mounts]]
+  source = "wikiword_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

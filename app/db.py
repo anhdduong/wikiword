@@ -7,11 +7,14 @@ transaction (SQLite DDL is transactional).
 
 from __future__ import annotations
 
+import os
 import sqlite3
 from pathlib import Path
 
 MIGRATIONS_DIR = Path(__file__).parent / "migrations"
-DEFAULT_DB_PATH = Path(__file__).parent.parent / "wikiword.db"
+DEFAULT_DB_PATH = Path(
+    os.environ.get("WIKIWORD_DB_PATH", str(Path(__file__).parent.parent / "wikiword.db"))
+)
 
 
 def connect(db_path: str | Path = DEFAULT_DB_PATH) -> sqlite3.Connection:

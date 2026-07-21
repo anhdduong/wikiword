@@ -6,8 +6,14 @@ __pycache__/
 
 # Generated database (rebuild: python -m app.seed && python -m scripts.verify_citations)
 wikiword.db
+wikiword.db-journal
 
 # Front end
 front/node_modules/
 front/dist/
 eval_results.jsonl
+
+# Claude Code: local-only, never pushed
+.claude/
+CLAUDE.md
+plan.md

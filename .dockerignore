@@ -1,0 +1,10 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.git
+wikiword.db
+eval_results.jsonl
+front/node_modules
+front/dist
+tests
