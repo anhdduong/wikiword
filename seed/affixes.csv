@@ -88,6 +88,7 @@ dem,root,Ancient Greek,demos,"people, populace",δῆμος,dem|demo,demo-
 phil,root,Ancient Greek,philos,"loving, fond of",φίλος,phil|philo,philo-
 phob,root,Ancient Greek,phobos,"fear, dread",φόβος,phob,-phobia
 soph,root,Ancient Greek,sophia,"wisdom, knowledge",σοφία,soph|sopho,-sophy
+etym,root,Ancient Greek,etymon,"true, literal sense",ἔτυμον; borrowed whole as English "etymon",etym|etymo|etymon,etymology
 therap,root,Ancient Greek,therapeia,"healing, treatment",θεραπεία,therap,therapy
 thes,root,Ancient Greek,thesis,"placing, setting",θέσις; ablaut variant thet-,thes|thet,thesis
 anthrop,root,Ancient Greek,anthropos,human being,ἄνθρωπος,anthrop|anthropo,anthropo-
@@ -122,6 +123,7 @@ fer,root,Latin,ferre,"to carry, bear",,fer,-fer
 flect,root,Latin,flectere,to bend,,flect|flex,flectere
 form,root,Latin,forma,"shape, form",,form,form
 fract,root,Latin,frangere,to break,,fract|frag,frangere
+integr,root,Latin,integer,"whole, untouched, entire","in integral/integrity/integrate; from in- 'not' + stem of tangere 'to touch'",integr|integer,integer
 ject,root,Latin,iacere,"to throw, cast",,ject,iacere
 jud,root,Latin,iudex,judge,,jud|judic,judge
 junct,root,Latin,iungere,to join,,junct,iungere
