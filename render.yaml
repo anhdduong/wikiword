@@ -6,7 +6,7 @@ services:
     healthCheckPath: /docs
     envVars:
       - key: WIKIWORD_CORS_ORIGINS
-        value: ""
+        value: "https://wikiword.vercel.app"
       - key: WIKIWORD_ADMIN_USER
         sync: false
       - key: WIKIWORD_ADMIN_PASS
