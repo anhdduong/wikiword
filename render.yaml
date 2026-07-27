@@ -15,3 +15,5 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
+      - key: WIKIWORD_MW_API_KEY
+        sync: false
