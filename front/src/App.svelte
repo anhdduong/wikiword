@@ -148,15 +148,10 @@
         {/each}
       </div>
 
-      {#if data.literal_meaning || data.modern_usage}
+      {#if data.literal_meaning}
         <div class="prose">
-          <h3>{data.unrecognized ? 'if it were a word' : 'Literal and Modern Meaning'}</h3>
-          {#if data.literal_meaning}
-            <p><b>{data.unrecognized ? 'These morphemes would mean:' : 'Literal definition:'}</b> {data.literal_meaning}</p>
-          {/if}
-          {#if data.modern_usage}
-            <p><b>Modern usage:</b> {data.modern_usage}</p>
-          {/if}
+          <h3>{data.unrecognized ? 'if it were a word' : 'Literal Meaning'}</h3>
+          <p><b>{data.unrecognized ? 'These morphemes would mean:' : 'Literal definition:'}</b> {data.literal_meaning}</p>
         </div>
       {/if}
 

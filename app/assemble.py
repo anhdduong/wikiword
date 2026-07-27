@@ -4,10 +4,6 @@ Input: the grounded morphemes (meanings/origins already retrieved from the
 affix table) plus fetched etymology prose. Output: literal_meaning,
 synthesized strictly from the provided facts — nothing may be invented.
 
-modern_usage is deliberately NOT synthesized here: it is always a dictionary
-definition quoted verbatim (app.compose.fetch_definition), so that field
-never contains generated text at all.
-
 If no morpheme carries a verified meaning there is nothing to synthesize
 from — assemble() returns None without spending an API call, and the
 response ships a null literal_meaning rather than an invented one.

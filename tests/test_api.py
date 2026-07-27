@@ -177,7 +177,6 @@ def test_llm_disabled_falls_back_to_cost_order(api):
     ]
     assert "LLM calls disabled" in body["status_note"]
     assert body["literal_meaning"] is None
-    assert body["modern_usage"] is None
 
 
 def test_rerank_choice_selects_segmentation(api, monkeypatch):
@@ -195,11 +194,6 @@ def test_rerank_choice_selects_segmentation(api, monkeypatch):
         assemble_module, "assemble",
         lambda word, morphemes, texts, call=None: "to make into a union",
     )
-    from app import compose as compose_module
-    monkeypatch.setattr(
-        compose_module, "fetch_definition",
-        lambda word, **kw: ("(verb) To organize workers.", True),
-    )
     body = client.get("/lookup", params={"word": "unionize"}).json()
     assert body["chosen_index"] == 1
     assert [m["surface"] for m in body["morphemes"]] == [
@@ -207,8 +201,6 @@ def test_rerank_choice_selects_segmentation(api, monkeypatch):
     ]
     assert body["rerank"]["reason"] == "second is right"
     assert body["literal_meaning"] == "to make into a union"
-    # modern_usage comes from the dictionary even when the LLM is enabled.
-    assert body["modern_usage"] == "(verb) To organize workers."
     conn = connect(db_path)
     row = conn.execute(
         "SELECT payload FROM word_cache WHERE word = 'unionize'"
@@ -217,7 +209,6 @@ def test_rerank_choice_selects_segmentation(api, monkeypatch):
     assert row is not None  # successful rerank+assemble is cached
     cached = json.loads(row["payload"])
     assert cached["chosen_index"] == 1
-    assert cached["modern_usage"] == "(verb) To organize workers."
 
 
 def test_rerank_failure_serves_but_does_not_cache(api, monkeypatch):
@@ -266,19 +257,12 @@ def test_assemble_failure_serves_but_does_not_cache(api, monkeypatch):
     assert row is None
 
 
-def test_no_llm_composes_deterministic_prose(api, monkeypatch):
-    from app import compose as compose_module
-
+def test_no_llm_composes_deterministic_prose(api):
     client, db_path = api
-    monkeypatch.setattr(
-        compose_module, "fetch_definition",
-        lambda word, **kw: ("(noun) An inscription encoding a date.", True),
-    )
     body = client.get("/lookup", params={"word": "chronogram"}).json()
     assert body["literal_meaning"] == (
         'chrono "time" + gram "written thing, letter"'
     )
-    assert body["modern_usage"] == "(noun) An inscription encoding a date."
     assert "composed from affix glosses" in body["status_note"]
     assert "LLM calls disabled" in body["status_note"]
     conn = connect(db_path)
@@ -287,53 +271,15 @@ def test_no_llm_composes_deterministic_prose(api, monkeypatch):
     ).fetchone()
     conn.close()
     assert row is not None  # fully definitive answer: cache it
-    assert json.loads(row["payload"])["modern_usage"].startswith("(noun)")
-
-
-def test_definition_shows_even_without_glosses(api, monkeypatch):
-    # flashback: two free-word roots, no table glosses — the literal sense
-    # can't compose, but the fetched definition is independently grounded.
-    from app import compose as compose_module
-
-    client, _ = api
-    monkeypatch.setattr(
-        compose_module, "fetch_definition",
-        lambda word, **kw: ("(noun) A scene set earlier than the story.", True),
-    )
-    body = client.get("/lookup", params={"word": "flashback"}).json()
-    assert body["literal_meaning"] is None
-    assert body["modern_usage"] == "(noun) A scene set earlier than the story."
-    assert "literal sense omitted" in body["status_note"]
-    assert "Free Dictionary" in body["status_note"]
-
-
-def test_dictionary_failure_serves_but_does_not_cache(api, monkeypatch):
-    from app import compose as compose_module
-
-    client, db_path = api
-    monkeypatch.setattr(
-        compose_module, "fetch_definition", lambda word, **kw: (None, False)
-    )
-    body = client.get("/lookup", params={"word": "thermograph"}).json()
-    assert '"heat"' in body["literal_meaning"]  # glosses still compose
-    assert body["modern_usage"] is None
-    assert "uncached" in body["status_note"]
-    conn = connect(db_path)
-    row = conn.execute(
-        "SELECT word FROM word_cache WHERE word = 'thermograph'"
-    ).fetchone()
-    conn.close()
-    assert row is None  # transient dictionary failure must not be frozen
 
 
 def test_no_facts_means_null_prose_and_still_cached(api):
     # strengths: no morpheme carries an authoritative meaning, so the
     # literal sense is omitted honestly — and that IS the complete answer:
-    # cache it. (fetch_definition is stubbed to a definitive miss.)
+    # cache it.
     client, db_path = api
     body = client.get("/lookup", params={"word": "strengths"}).json()
     assert body["literal_meaning"] is None
-    assert body["modern_usage"] is None
     assert "literal sense omitted" in body["status_note"]
     conn = connect(db_path)
     row = conn.execute(
@@ -355,8 +301,8 @@ def insert_negative_etymology(db_path, word):
 
 def test_unrecognized_word_flags_misspelling(api):
     # "therapis" segments plausibly, but it's not in the wordlist and every
-    # source definitively lacks it (negative-cache row): flag it, suggest
-    # the real word, and never invent a modern usage for it.
+    # source definitively lacks it (negative-cache row): flag it and
+    # suggest the real word.
     client, db_path = api
     insert_negative_etymology(db_path, "therapis")
     resp = client.get("/lookup", params={"word": "therapis"})
@@ -364,7 +310,6 @@ def test_unrecognized_word_flags_misspelling(api):
     assert "possible misspelling" in body["status_note"]
     assert body["unrecognized"] is True
     assert "therapist" in body["suggestions"]
-    assert body["modern_usage"] is None
 
 
 def test_unfetched_word_is_not_flagged_as_misspelling(api):

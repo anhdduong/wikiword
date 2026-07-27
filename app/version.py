@@ -16,7 +16,13 @@ _ALGORITHM_TAG = "segment-rerank-v1"  # bump on structural algorithm changes
 # Bump whenever main.py's payload shape or lookup orchestration changes:
 # cached payloads predating the change then evict themselves. (Lives here,
 # not in main.py, because main imports this module.)
-PAYLOAD_VERSION = "payload-v3"  # v3: modern_usage always dictionary-quoted
+# v4 dropped modern_usage from the payload but deliberately did NOT bump
+# this string: bumping would evict every prewarmed cache row (each an LLM
+# call spent against a scarce free-tier daily quota) just to strip an
+# unused key from old rows' stored JSON, which is harmless since nothing
+# reads it anymore. Bump normally for any change that isn't purely additive
+# key removal.
+PAYLOAD_VERSION = "payload-v3"
 
 
 def model_version() -> str:

@@ -171,13 +171,11 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
             grounding = ground_module.ground(
                 conn, w, candidates[chosen_index], records
             )
-            # Prose fields. literal_meaning: with the LLM, llm_assemble
-            # (plan §4) synthesized only from grounded facts; without it,
-            # glosses joined deterministically. Either way, no facts -> null
-            # field, never invented prose. modern_usage: always a dictionary
-            # definition quoted verbatim — fetched, never synthesized. A
-            # transient failure on either serves the response uncached, same
-            # rule as the rerank.
+            # literal_meaning: with the LLM, llm_assemble (plan §4)
+            # synthesized only from grounded facts; without it, glosses
+            # joined deterministically. Either way, no facts -> null field,
+            # never invented prose. A transient assemble failure serves the
+            # response uncached, same rule as the rerank.
             prose_texts = [prose(r.text) for r in records]
             literal = None
             assemble_degraded = False
@@ -202,22 +200,6 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                     "literal sense composed from affix glosses" if literal else
                     "no verified morpheme meanings; literal sense omitted"
                 )
-            # The dictionary definition is independently grounded — fetch it
-            # even without glosses (except for unrecognized words, which no
-            # dictionary has).
-            if unrecognized:
-                modern, definitive = None, True
-            else:
-                modern, definitive = compose_module.fetch_definition(w)
-            if modern:
-                prose_notes.append(
-                    "modern usage quoted from Free Dictionary definition"
-                )
-            elif not definitive:
-                assemble_degraded = True
-                prose_notes.append(
-                    "dictionary lookup failed for this request (uncached)"
-                )
             assemble_note = "; ".join(prose_notes) or None
 
             note_parts = [
@@ -232,7 +214,6 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                 "unrecognized": unrecognized,
                 "suggestions": suggestions,
                 "literal_meaning": literal,
-                "modern_usage": modern,
                 "morphemes": [asdict(m) for m in grounding.morphemes],
                 "conflicts": list(grounding.conflicts),
                 "etymology": [

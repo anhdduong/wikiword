@@ -1,8 +1,4 @@
-import json
-
-import urllib.error
-
-from app.compose import fetch_definition, literal_meaning
+from app.compose import literal_meaning
 from app.ground import GroundedMorpheme
 
 
@@ -32,42 +28,6 @@ def test_literal_meaning_marks_unverified_pieces():
 
 def test_literal_meaning_none_without_any_gloss():
     assert literal_meaning([gm("strength", "root"), gm("s", "unknown")]) is None
-
-
-DICT_BODY = json.dumps([{
-    "word": "monolithic",
-    "meanings": [{
-        "partOfSpeech": "adjective",
-        "definitions": [{"definition": "Massive, solid, and uniform."}],
-    }],
-}]).encode()
-
-
-def test_fetch_definition_returns_first_definition():
-    assert fetch_definition(
-        "monolithic", http_get=lambda url: (200, DICT_BODY)
-    ) == ("(adjective) Massive, solid, and uniform.", True)
-
-
-def test_fetch_definition_404_is_definitive_miss():
-    assert fetch_definition("qzxvqx", http_get=lambda url: (404, b"")) == (None, True)
-
-
-def test_fetch_definition_5xx_is_not_definitive():
-    assert fetch_definition("word", http_get=lambda url: (500, b"")) == (None, False)
-
-
-def test_fetch_definition_transport_failure_is_not_definitive():
-    def broken(url):
-        raise urllib.error.URLError("offline")
-
-    assert fetch_definition("word", http_get=broken) == (None, False)
-
-
-def test_fetch_definition_bad_json_is_definitive_empty():
-    assert fetch_definition(
-        "word", http_get=lambda url: (200, b"not json")
-    ) == (None, True)
 
 
 def test_model_version_covers_compose():
