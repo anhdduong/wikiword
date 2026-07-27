@@ -17,3 +17,6 @@ eval_results.jsonl
 .claude/
 CLAUDE.md
 plan.md
+
+# Secrets
+.env
