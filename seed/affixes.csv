@@ -100,15 +100,19 @@ phys,root,Ancient Greek,phusis,nature,φύσις,phys|physi|physio,physio-
 techn,root,Ancient Greek,tekhne,"art, skill, craft",τέχνη,techn|techno,techno-
 zo,root,Ancient Greek,zoion,"animal, living being",ζῷον,zo|zoo,zoo-
 gen,root,Ancient Greek,genos,"birth, origin, kind","γένος; Latin genus is cognate — one row for both traditions",gen|geno,-gen
+gen,root,Latin,"genus, generis, generalis","class, kind, race, birth","Latin genus sense (general, generous, generic) — cognate with but distinct from the Ancient Greek genos row above; disambiguated by which source form the retrieved prose names",gen,genus
 crypt,root,Ancient Greek,kruptos,"hidden, secret",κρυπτός,crypt|crypto,crypto-
 glot,root,Ancient Greek,glotta,"tongue, language",γλῶττα / γλῶσσα,glot|gloss|glosso,glosso-
 hem,root,Ancient Greek,haima,blood,αἷμα,hem|hemo|hemat|haem,hemo-
 neur,root,Ancient Greek,neuron,"nerve, sinew",νεῦρον,neur|neuro,neuro-
 opt,root,Ancient Greek,optos,"seen, visible; eye",ὀπτός,opt|opto,opto-
+opt,root,Latin,"optare, optio, opto","to choose, wish for","choosing sense (option, adopt, opt) — distinct from the Ancient Greek optos eye row above (optic, optometry). Note optimus best is from ops, not optare",opt,optare
 pyr,root,Ancient Greek,pur,fire,πῦρ,pyr|pyro,pyro-
 the,root,Ancient Greek,theos,god,"θεός; form 'the' collides with the English article — expect cost-function reliance",the|theo,theo-
+the,root,Ancient Greek,"thea, theoros, theatron","sight, spectacle; viewing","viewing sense (theory, theater) — distinct from the theos god row above. Same origin language, so disambiguation rests entirely on which source form the prose names",the,thea
 ton,root,Ancient Greek,tonos,"tone, pitch, tension",τόνος; in monotonous/monotone/tonic,ton|tono|tone,tono-
 top,root,Ancient Greek,topos,place,τόπος,top|topo,topo-
+top,root,Old English,topp,"summit, crown, highest part","native sense (laptop, desktop, topmost) — distinct from the Ancient Greek topos place row above (topic, topography)",top,top
 polis,root,Ancient Greek,polis,"city, city-state",πόλις,polis|poli|pol,-polis
 paed,root,Ancient Greek,pais,child,"παῖς, genitive παιδός; distinct from Latin ped 'foot'",paed|ped|pedo,paedo-
 ped,root,Latin,pes,foot,"genitive pedis; distinct from Greek paed 'child'",ped|pedi,ped-
@@ -128,6 +132,7 @@ ject,root,Latin,iacere,"to throw, cast",,ject,iacere
 jud,root,Latin,iudex,judge,,jud|judic,judge
 junct,root,Latin,iungere,to join,,junct,iungere
 leg,root,Latin,legere,"to read, choose","collides with free word 'leg'",leg|lect,legere
+leg,root,Latin,"lex, legis, legalis",law,"law sense (legal, legislate, privilege) — distinct from the legere to read, choose row above (collect, legible, legend). Same origin language, so disambiguation rests on the source form named in the prose",leg,lex
 loc,root,Latin,locus,place,,loc|loco,loco-
 loqu,root,Latin,loqui,to speak,,loqu|locut,loqui
 luc,root,Latin,lux,light,"genitive lucis; lumin- from lumen",luc|lumin,lux

@@ -21,6 +21,7 @@ from __future__ import annotations
 import json
 import re
 import sqlite3
+import unicodedata
 from dataclasses import dataclass
 
 from app.retrieve import EtymologyRecord, prose
@@ -66,9 +67,25 @@ def _tokens_of(surface: str, canonical: str | None, source_form: str | None) -> 
     return [t.lower() for t in dict.fromkeys(tokens) if len(t) >= 2]
 
 
+def _deaccent(text: str) -> str:
+    """Drop combining marks. Wiktionary writes Latin and transliterated
+    Greek with length marks (lex -> lēx, optio -> optiō, thea -> theā), so
+    a literal match against an ASCII source_form never fires — which
+    silently defeats homograph disambiguation: neither sense of "leg"
+    matches legal's prose, so the first table row wins by accident rather
+    than by evidence."""
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", text)
+        if not unicodedata.combining(c)
+    )
+
+
 def _mentions(text: str, tokens: list[str]) -> bool:
-    low = text.lower()
-    return any(re.search(rf"\b{re.escape(t)}\b", low) for t in tokens)
+    low = _deaccent(text).lower()
+    return any(
+        re.search(rf"\b{re.escape(_deaccent(t).lower())}\b", low)
+        for t in tokens
+    )
 
 
 def _langs_in(text: str) -> set[str]:

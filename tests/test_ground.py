@@ -205,3 +205,33 @@ def test_homograph_sense_follows_latin_text(db, lex):
     al = next(m for m in g.morphemes if m.surface == "al")
     assert al.origin == "Latin"
     assert not g.conflicts
+
+
+LEGAL_TEXT = ('Learned borrowing from Latin lēgālis ("legal"), from lēx '
+              '("law"). Doublet of loyal and leal.')
+
+
+def test_macron_bearing_prose_matches_ascii_source_form(db, lex):
+    # Wiktionary writes Latin with length marks. Matching the raw text
+    # against an ASCII source_form finds neither "leg" sense, so the first
+    # table row used to win by row order rather than by evidence.
+    cand = segment("legal", lex)[0]
+    g = ground(db, "legal", cand, [record("legal", LEGAL_TEXT)])
+    leg = next(m for m in g.morphemes if m.surface == "leg")
+    assert leg.meaning == "law"
+    assert "lex" in leg.source_form
+
+
+THEORY_TEXT = ('Borrowed from Late Latin theōria, from Ancient Greek θεωρία '
+               '(theōría), from θεᾱ́ (theā, "sight") + ὁράω (horáō, "to see").')
+
+
+def test_same_language_homograph_splits_on_source_form(db, lex):
+    # theos "god" and thea "sight" are both Ancient Greek, so origin
+    # language cannot separate them — only the source form the prose
+    # actually names can.
+    cand = segment("theory", lex)[0]
+    g = ground(db, "theory", cand, [record("theory", THEORY_TEXT)])
+    the = next(m for m in g.morphemes if m.surface == "the")
+    assert the.meaning == "sight, spectacle; viewing"
+    assert the.origin == "Ancient Greek"
