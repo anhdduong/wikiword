@@ -96,13 +96,13 @@ def test_strengths_plural_resolves(db, lex):
 
 
 def test_partial_status_from_an_unknown_span(db, lex):
-    # crystal -> cry + st + al: the 'st' span matches nothing, which is what
+    # gentle -> gen + tle: the 'tle' span matches nothing, which is what
     # caps the status at partial.
-    cand = segment("crystal", lex)[0]
-    g = ground(db, "crystal", cand, [record("crystal", "From Latin crystallum.")])
+    cand = segment("gentle", lex)[0]
+    g = ground(db, "gentle", cand, [record("gentle", "From Latin gentilis.")])
     by_surface = {m.surface: m for m in g.morphemes}
-    assert by_surface["st"].type == "unknown"
-    assert not by_surface["st"].verified
+    assert by_surface["tle"].type == "unknown"
+    assert not by_surface["tle"].verified
     assert g.status == "partial"
 
 
@@ -241,28 +241,28 @@ THEORY_TEXT = ('Borrowed from Late Latin theōria, from Ancient Greek θεωρί
 
 
 def test_short_unknown_spans_are_not_queued(db, lex):
-    # crystal -> cry + st + al; "st" is the residue of a split, not a
-    # morpheme anyone should curate.
-    cand = segment("crystal", lex)[0]
-    assert any(p.kind == "unknown" and p.surface == "st" for p in cand.pieces)
-    ground(db, "crystal", cand, [])
-    assert "st" not in queue_surfaces(db)
+    # noble -> nob + le; "le" is the residue of a split, not a morpheme
+    # anyone should curate.
+    cand = segment("noble", lex)[0]
+    assert any(p.kind == "unknown" and p.surface == "le" for p in cand.pieces)
+    ground(db, "noble", cand, [])
+    assert "le" not in queue_surfaces(db)
 
 
 def test_long_unknown_spans_still_queue(db, lex):
     # The length guard must not silence real candidates for curation.
-    cand = segment("exclusive", lex)[0]
+    cand = segment("awkward", lex)[0]
     unknown = [p.surface for p in cand.pieces if p.kind == "unknown"]
     assert any(len(u) >= 3 for u in unknown)
-    ground(db, "exclusive", cand, [])
+    ground(db, "awkward", cand, [])
     assert queue_surfaces(db) & {u for u in unknown if len(u) >= 3}
 
 
 def test_proper_nouns_never_queue(db, lex, monkeypatch):
-    monkeypatch.setattr("app.ground.PROPER_NOUNS", frozenset({"aggressive"}))
-    cand = segment("aggressive", lex)[0]
+    monkeypatch.setattr("app.ground.PROPER_NOUNS", frozenset({"awkward"}))
+    cand = segment("awkward", lex)[0]
     before = queue_surfaces(db)
-    ground(db, "aggressive", cand, [])
+    ground(db, "awkward", cand, [])
     assert queue_surfaces(db) == before
 
 

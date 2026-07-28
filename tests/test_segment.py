@@ -352,3 +352,41 @@ def test_false_inflection_is_blocked(lex, word):
 ])
 def test_excluded_inflection_allomorphs_leave_words_whole(lex, word):
     assert surfaces(segment(word, lex)[0]) == [word], word
+
+
+# --- re-spans (audit priority 5) --------------------------------------------
+# The queue surfaced these at the wrong boundary (clu for clus, occa for cas,
+# aggr for gress). A root row carrying the correct allomorphs re-cuts them.
+
+@pytest.mark.parametrize("word,expected", [
+    ("aggressive", ["ag", "gress", "ive"]),
+    ("exclusive", ["ex", "clus", "ive"]),
+    ("include", ["in", "clude"]),
+    ("recognise", ["re", "cogn", "ise"]),
+    ("practical", ["pract", "ic", "al"]),
+    ("magnificent", ["magnif", "ic", "ent"]),
+    ("appropriate", ["ap", "propri", "ate"]),
+    ("incident", ["in", "cid", "ent"]),
+    ("insult", ["in", "sult"]),
+    ("assume", ["as", "sume"]),
+    ("create", ["cre", "ate"]),
+    ("national", ["nat", "ion", "al"]),
+    ("served", ["serv", "ed"]),
+    ("plague", ["plag", "ue"]),
+])
+def test_respan_produces_the_correct_boundary(lex, word, expected):
+    assert surfaces(segment(word, lex)[0]) == expected
+
+
+@pytest.mark.parametrize("word", [
+    # Words that merely look like they contain one of the new roots. Each is
+    # a different etymon, so an exception keeps the false claim out.
+    "greet",    # Old English gretan, not gradi
+    "creep",    # Old English creopan, not creare
+    "salad",    # Latin sal 'salt', not salire 'to leap'
+    "dive",     # Old English dyfan, not dividere
+])
+def test_respan_roots_do_not_overreach(lex, word):
+    top = segment(word, lex)[0]
+    for p in top.pieces:
+        assert p.kind in ("free", "unknown", "suffix"), f"{word} -> {surfaces(top)}"

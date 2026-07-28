@@ -247,3 +247,28 @@ phras,root,Ancient Greek,phrazein,"to speak, declare",,phras|phrase,phrazein,1
 -ty,suffix,Old English,-tig,group of ten,"fifty, sixty — distinct from the Latinate -ty of quality/city",ty|tig,-ty,1
 -teen,suffix,Old English,-tyne,ten more than,,teen,-teen,1
 -th,suffix,Old English,"-thu, -otha",forms ordinals and abstract nouns,"fourth, wealth, strength",th,-th,1
+clud,root,Latin,claudere,"to close, shut","conclusion, include, exclusive, closet",clud|clus|clude,claudere,1
+sum,root,Latin,sumere,"to take, take up","assume, consume, presume",sum|sump|sume,sumere,1
+sed,root,Latin,sedere,"to sit, settle","session, sedentary, president, reside",sed|sess|sid,sedere,1
+cre,root,Latin,creare,"to make, bring forth","creation, recreate",cre|creat,creare,1
+gnos,root,Latin,(g)noscere,to know,"recognise, cognition, diagnosis",gnos|cogn|nosc,(g)noscere,1
+rap,root,Latin,rapere,"to seize, snatch",form 'reav' deliberately excluded: bereave is Old English bereafian,rap|rapt|rept,rapere,1
+nat,root,Latin,natus,born,"form 'na' deliberately excluded — two letters, far too greedy",nat|gnat,natus,1
+aug,root,Latin,augere,to increase,"auction, augment, author (via auctor)",aug|auct|auc,augere,1
+div,root,Latin,dividere,"to divide, separate","forms 'vid'/'vis' deliberately excluded: they belong to the existing vid 'to see' row, and dividere is a different root",div,dividere,1
+propr,root,Latin,proprius,one's own,"appropriate, property, proper",propr|propri,proprius,1
+magn,root,Latin,magnus,"great, large","magnificent, magnitude, majesty, maximum",magn|magnif,magnus,1
+sal,root,Latin,salire,to leap,"insult, assault, resilient",sal|sult|sault,salire,1
+cad,root,Latin,cadere,to fall,"occasion, accident, cadence",cad|cid|cas,cadere,1
+grad,root,Latin,gradi,"to step, go","aggressive, congress, degree, gradual",grad|gress|gree,gradi,1
+fend,root,Latin,fendere,"to strike, ward off","offense, defend",fend|fens,fendere,1
+caus,root,Latin,causa,"cause, reason",,caus,causa,1
+satis,root,Latin,satis,enough,,satis,satis,1
+liber,root,Latin,liber,free,,liber|libert,liber,1
+plag,root,Latin,plaga,"blow, stroke",,plag,plaga,1
+eleph,root,Ancient Greek,elephas,"elephant, ivory",,eleph,elephas,1
+galact,root,Ancient Greek,"gala, galakt-",milk,galaxy — the Milky Way,galact|galax,"gala, galakt-",1
+pract,root,Ancient Greek,prattein,"to do, act",,pract|prax,prattein,1
+cryst,root,Ancient Greek,krystallos,"ice, crystal",,cryst|crystall,krystallos,1
+val,root,Latin,valere,"to be strong, be worth",,val,valere,1
+serv,root,Latin,servire,to serve,,serv,servire,1
