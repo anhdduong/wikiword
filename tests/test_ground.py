@@ -89,7 +89,10 @@ def test_strengths_partial_with_unknown_span(db, lex):
     assert by_surface["strength"].verified
     assert not by_surface["s"].verified
     assert by_surface["s"].type == "unknown"
-    assert "s" in queue_surfaces(db)
+    # The span is still reported as unknown and still caps status at
+    # partial — it is just below MIN_QUEUE_SURFACE, so it is not offered
+    # for curation. Reporting and curation are separate concerns.
+    assert "s" not in queue_surfaces(db)
 
 
 def test_gibberish_unverified(db, lex):
@@ -224,6 +227,44 @@ def test_macron_bearing_prose_matches_ascii_source_form(db, lex):
 
 THEORY_TEXT = ('Borrowed from Late Latin theōria, from Ancient Greek θεωρία '
                '(theōría), from θεᾱ́ (theā, "sight") + ὁράω (horáō, "to see").')
+
+
+def test_short_unknown_spans_are_not_queued(db, lex):
+    # physics -> physi + cs; "cs" is the residue of a split, not a morpheme
+    # anyone should curate.
+    cand = segment("physics", lex)[0]
+    assert any(p.kind == "unknown" and p.surface == "cs" for p in cand.pieces)
+    ground(db, "physics", cand, [])
+    assert "cs" not in queue_surfaces(db)
+
+
+def test_long_unknown_spans_still_queue(db, lex):
+    # The length guard must not silence real candidates for curation.
+    cand = segment("psychiatrist", lex)[0]
+    unknown = [p.surface for p in cand.pieces if p.kind == "unknown"]
+    assert any(len(u) >= 3 for u in unknown)
+    ground(db, "psychiatrist", cand, [])
+    assert queue_surfaces(db) & {u for u in unknown if len(u) >= 3}
+
+
+def test_proper_nouns_never_queue(db, lex, monkeypatch):
+    monkeypatch.setattr("app.ground.PROPER_NOUNS", frozenset({"psychiatrist"}))
+    cand = segment("psychiatrist", lex)[0]
+    before = queue_surfaces(db)
+    ground(db, "psychiatrist", cand, [])
+    assert queue_surfaces(db) == before
+
+
+def test_curate_false_suppresses_queue_without_changing_output(db, lex):
+    # Unrecognised words (likely misspellings) segment into artefacts; the
+    # payload must be identical, only the curation side effect is dropped.
+    cand = segment("psychiatrist", lex)[0]
+    before = queue_surfaces(db)
+    quiet = ground(db, "psychiatrist", cand, [], curate=False)
+    assert queue_surfaces(db) == before
+    loud = ground(db, "psychiatrist", cand, [], curate=True)
+    assert quiet.morphemes == loud.morphemes
+    assert quiet.status == loud.status
 
 
 def test_same_language_homograph_splits_on_source_form(db, lex):

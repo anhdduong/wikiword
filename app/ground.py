@@ -13,7 +13,10 @@ Rules implemented:
   languages disjoint from the table row's. Any conflict caps status at
   'partial' (§9 decision).
 - Every unknown span and every reviewed=0 morpheme is queued for curation
-  (deduped by surface).
+  (deduped by surface), subject to the queue guards below: nothing shorter
+  than MIN_QUEUE_SURFACE, nothing from a proper noun, nothing at all from a
+  word no dictionary recognises. Guards gate curation only — the served
+  payload is identical with or without them.
 """
 
 from __future__ import annotations
@@ -23,6 +26,7 @@ import re
 import sqlite3
 import unicodedata
 from dataclasses import dataclass
+from pathlib import Path
 
 from app.retrieve import EtymologyRecord, prose
 from app.segment import COMBINING, FREE, UNKNOWN, Candidate
@@ -31,6 +35,30 @@ GROUND_VERSION = "ground-v4"  # v4: free-word pieces surface as type "word"
                               # (they were never affix-table roots)
 
 WORD = "word"  # display type for free-word pieces
+
+# Queue hygiene. These gate what reaches review_queue only — segmentation
+# and the served payload are untouched, which is why they do not bump
+# GROUND_VERSION.
+#
+# A one- or two-letter unmatched span is a leftover of a bad split, not a
+# morpheme somebody should curate; before this guard they were 46% of the
+# unknown-span queue.
+MIN_QUEUE_SURFACE = 3
+
+PROPER_NOUNS_PATH = Path(__file__).parent.parent / "seed" / "proper_nouns.txt"
+
+
+def _load_proper_nouns(path: Path = PROPER_NOUNS_PATH) -> frozenset[str]:
+    if not path.exists():
+        return frozenset()
+    return frozenset(
+        line.strip().lower()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    )
+
+
+PROPER_NOUNS = _load_proper_nouns()
 
 LANG_KEYWORDS = frozenset(
     "greek latin english french german norse dutch italian spanish arabic "
@@ -107,6 +135,10 @@ def _sentences(records: list[EtymologyRecord]) -> list[str]:
 
 
 def _queue(conn: sqlite3.Connection, surface: str, word: str, proposed: dict) -> None:
+    if word in PROPER_NOUNS:
+        return
+    if proposed.get("kind") == "unknown" and len(surface) < MIN_QUEUE_SURFACE:
+        return
     exists = conn.execute(
         "SELECT 1 FROM review_queue WHERE surface = ?", (surface,)
     ).fetchone()
@@ -122,7 +154,12 @@ def ground(
     word: str,
     candidate: Candidate,
     records: list[EtymologyRecord],
+    curate: bool = True,
 ) -> GroundingResult:
+    """curate=False suppresses review_queue writes. main.py passes it for
+    words no dictionary source knows (likely misspellings): their spans are
+    artefacts of segmenting a non-word, so nothing there is worth a human's
+    time. Grounding output itself is identical either way."""
     sentences = _sentences(records)
     morphemes: list[GroundedMorpheme] = []
     conflicts: list[dict] = []
@@ -135,7 +172,8 @@ def ground(
                     source_form=None, meaning=None, verified=False,
                     citations=(), notes="unmatched span",
                 ))
-                _queue(conn, piece.surface, word, {"kind": "unknown"})
+                if curate:
+                    _queue(conn, piece.surface, word, {"kind": "unknown"})
                 continue
 
             if piece.kind == FREE or not piece.affix_ids:
@@ -216,7 +254,7 @@ def ground(
                 citations=tuple(citations),
                 notes=notes,
             ))
-            if not row["reviewed"]:
+            if curate and not row["reviewed"]:
                 _queue(conn, piece.surface, word, {
                     "affix_id": row["id"], "canonical": row["canonical"],
                     "type": row["type"], "origin_lang": row["origin_lang"],

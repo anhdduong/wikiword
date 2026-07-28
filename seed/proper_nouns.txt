@@ -1,0 +1,87 @@
+# Words that are proper nouns in ordinary use. Spans found inside these are
+# never queued for curation: a name is not built from English morphemes, so
+# every span it yields is noise (edward -> ward, monica -> ica, caesar ->
+# cae). Lookups still work and still segment — this only silences the
+# review queue.
+#
+# One lowercase word per line. Blank lines and # comments ignored.
+
+# --- given names ---
+amber
+betty
+beth
+caesar
+debbie
+dylan
+edward
+felix
+hector
+ivan
+jess
+jordan
+juan
+judy
+kenny
+kurt
+lincoln
+lloyd
+lois
+lucy
+margaret
+matthew
+megan
+monica
+neil
+nikki
+phoebe
+quinn
+ralph
+rita
+sammy
+sheila
+toby
+tyler
+vanessa
+
+# --- surnames ---
+foster
+harris
+
+# --- places and demonyms ---
+austin
+brazil
+dutch
+egypt
+europe
+iraq
+irish
+israel
+jersey
+korea
+mexican
+soviet
+tokyo
+turkey
+villa
+
+# --- months ---
+january
+february
+march
+april
+june
+july
+august
+september
+october
+november
+december
+
+# --- weekdays ---
+monday
+tuesday
+wednesday
+thursday
+friday
+saturday
+sunday

@@ -169,7 +169,8 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
             # ground() + status() (plan §5): verify the chosen segmentation
             # against the affix table and retrieved etymology.
             grounding = ground_module.ground(
-                conn, w, candidates[chosen_index], records
+                conn, w, candidates[chosen_index], records,
+                curate=not unrecognized,
             )
             # literal_meaning: with the LLM, llm_assemble (plan §4)
             # synthesized only from grounded facts; without it, glosses
