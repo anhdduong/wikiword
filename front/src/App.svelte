@@ -50,6 +50,15 @@
     }
   }
 
+  // Only free-word pieces are drillable. A bound morpheme (syn-, -sis) is
+  // not a headword, so looking it up returns a junk decomposition rather
+  // than the entry the user expected.
+  function drillInto(surface) {
+    word = surface;
+    lookup();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function pieceLabel(piece) {
     return piece.surface + (piece.linker ? `·${piece.linker}` : '');
   }
@@ -147,7 +156,15 @@
         {#each data.morphemes as m}
           <div class="morpheme {m.verified ? 'verified' : 'unverified'}">
             <div class="morpheme-head">
-              <span class="surface">{m.surface}</span>
+              {#if m.type === 'word'}
+                <button
+                  class="surface surface-link"
+                  title="break down “{m.surface}”"
+                  onclick={() => drillInto(m.surface)}
+                >{m.surface}</button>
+              {:else}
+                <span class="surface">{m.surface}</span>
+              {/if}
               <span class="chip kind">{m.type}</span>
               <span class="chip {m.verified ? 'ok' : 'warn'}">
                 {m.verified ? '✓ verified' : '? unverified'}
@@ -161,7 +178,7 @@
             {#if m.meaning}
               <div class="meaning">“{m.meaning}”</div>
             {:else if m.type === 'word'}
-              <div class="meaning none">everyday English word — see dictionary</div>
+              <div class="meaning none">everyday English word — click it to break it down</div>
             {:else}
               <div class="meaning none">no verified meaning</div>
             {/if}
@@ -427,6 +444,26 @@
   .surface {
     font-size: 1.3rem;
     font-weight: 700;
+  }
+  button.surface-link {
+    background: none;
+    border: none;
+    padding: 0;
+    border-radius: 0;
+    font: inherit;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: #b3a795;
+    text-underline-offset: 4px;
+  }
+  button.surface-link:hover,
+  button.surface-link:focus-visible {
+    color: #52657a;
+    text-decoration-style: solid;
   }
   .chip {
     font-size: 0.7rem;
