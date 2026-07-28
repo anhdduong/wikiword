@@ -162,7 +162,20 @@
 
       <div class="morphemes">
         {#each data.morphemes as m}
-          <div class="morpheme {m.verified ? 'verified' : 'unverified'}">
+          <!-- The whole card is the hit area for a drillable morpheme; the
+               button inside stays the keyboard/AT target, and clicks landing
+               on a citation link are left alone. The card is a pointer
+               convenience only, so it needs no key handler of its own —
+               tabbing reaches the button and Enter drills from there. -->
+          <!-- svelte-ignore a11y_click_events_have_key_events -->
+          <!-- svelte-ignore a11y_no_static_element_interactions -->
+          <div
+            class="morpheme {m.verified ? 'verified' : 'unverified'}
+                   {m.type === 'word' ? 'drillable' : ''}"
+            onclick={m.type === 'word'
+              ? (e) => { if (!e.target.closest('a')) drillInto(m.surface); }
+              : null}
+          >
             <div class="morpheme-head">
               {#if m.type === 'word'}
                 <button
@@ -444,6 +457,38 @@
     border-color: #d8b35e;
     background: #fffdf5;
   }
+  /* A drillable card lifts and warms to orange as one object — the only
+     saturated colour on a cream-and-brown page, so it cannot be confused
+     with the bound-morpheme cards beside it. */
+  .morpheme.drillable {
+    cursor: pointer;
+    transition: background 0.14s ease, border-color 0.14s ease,
+                transform 0.14s ease, box-shadow 0.14s ease;
+  }
+  .morpheme.drillable:hover,
+  .morpheme.drillable:focus-within {
+    background: #fff6ec;
+    border-color: #c2570e;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 18px rgba(140, 65, 10, 0.22);
+  }
+  .morpheme.drillable:hover .surface-link,
+  .morpheme.drillable:focus-within .surface-link {
+    background: #c2570e;
+    border-color: #a2470a;
+    color: #fff;
+    transform: none;
+    box-shadow: none;
+  }
+  .morpheme.drillable:hover .drill-hint,
+  .morpheme.drillable:focus-within .drill-hint {
+    color: #ffe3c7;
+    transform: translateX(3px);
+  }
+  .morpheme.drillable:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(140, 65, 10, 0.24);
+  }
   .morpheme-head {
     display: flex;
     align-items: center;
@@ -461,45 +506,62 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    background: #e9f0f7;
-    border: 1px solid #b9cadb;
+    background: #f8efe0;
+    border: 1px solid #e0c9a4;
     padding: 0.05rem 0.5rem 0.1rem;
     border-radius: 8px;
     font: inherit;
     font-size: 1.3rem;
     font-weight: 700;
-    color: #2f4a67;
+    color: #8a4b12;
     cursor: pointer;
     text-decoration: none;
-    transition: background 0.12s ease, border-color 0.12s ease,
-                transform 0.12s ease, box-shadow 0.12s ease;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease,
+                transform 0.14s ease, box-shadow 0.14s ease;
   }
   .drill-hint {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #6b8aa8;
-    transition: transform 0.12s ease, color 0.12s ease;
+    color: #bb8b52;
+    transition: transform 0.14s ease, color 0.14s ease;
   }
+  /* Hover lifts it off the page and goes solid burnt orange — the one
+     saturated colour on an otherwise cream-and-brown page, so a drillable
+     morpheme cannot be mistaken for the bound ones beside it. */
   button.surface-link:hover,
   button.surface-link:focus-visible {
-    background: #d8e6f3;
-    border-color: #7fa3c4;
-    color: #1d3348;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(47, 74, 103, 0.18);
+    background: #c2570e;
+    border-color: #a2470a;
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(140, 65, 10, 0.32);
   }
   button.surface-link:hover .drill-hint,
   button.surface-link:focus-visible .drill-hint {
-    color: #2f4a67;
-    transform: translateX(2px);
+    color: #ffe3c7;
+    transform: translateX(3px);
   }
   button.surface-link:focus-visible {
-    outline: 2px solid #2f4a67;
+    outline: 2px solid #8a4b12;
     outline-offset: 2px;
   }
   button.surface-link:active {
     transform: translateY(0);
-    box-shadow: none;
+    box-shadow: 0 1px 3px rgba(140, 65, 10, 0.3);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button.surface-link,
+    .drill-hint,
+    .morpheme.drillable {
+      transition: none;
+    }
+    button.surface-link:hover,
+    button.surface-link:focus-visible,
+    .morpheme.drillable:hover,
+    .morpheme.drillable:focus-within,
+    .morpheme.drillable:active {
+      transform: none;
+    }
   }
   .chip {
     font-size: 0.7rem;
