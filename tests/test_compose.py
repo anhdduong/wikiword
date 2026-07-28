@@ -221,3 +221,34 @@ def test_definitions_enabled_tracks_the_key(monkeypatch):
     assert definitions_enabled() is False
     monkeypatch.setenv("WIKIWORD_MW_API_KEY", "k")
     assert definitions_enabled() is True
+
+
+MW_SX_HOMOGRAPH_ENTRY = {
+    "meta": {"id": "drilling"},
+    "hwi": {"hw": "drilling"},
+    "fl": "noun",
+    "def": [{"sseq": [[["sense", {"dt": [["text", "{bc}{sx|drill:6||}"]]}]]]}],
+}
+
+
+def test_sense_cross_reference_drops_the_homograph_id(monkeypatch):
+    # Shipped as "(noun) drill:6" — MW's internal sense id on the page.
+    monkeypatch.setenv("WIKIWORD_MW_API_KEY", "k")
+    definition, _ = fetch_definition(
+        "drilling",
+        http_get=lambda url: (200,
+                              json.dumps([MW_SX_HOMOGRAPH_ENTRY]).encode()),
+    )
+    assert definition == "(noun) drill"
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("mixed in a 3:1 ratio", "mixed in a 3:1 ratio"),   # prose keeps colons
+    ("{bc}{sx|drill:6||}", "drill"),
+    ("{bc}{sx|go:1||} quickly", "go quickly"),
+    ("{bc}a {it}single{/it} stone", "a single stone"),
+])
+def test_clean_only_strips_ids_inside_tokens(text, expected):
+    from app.compose import _clean
+
+    assert _clean(text) == expected

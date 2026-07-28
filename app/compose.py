@@ -26,6 +26,18 @@ COMPOSE_VERSION = "compose-v2"  # v2: definition fetched even without glosses
 
 _PIPED_TOKEN = re.compile(r"\{[a-zA-Z_0-9]+\|([^|}]*)[^}]*\}")
 _BARE_TOKEN = re.compile(r"\{/?[a-zA-Z_0-9]*\}")
+# MW disambiguates homographs with a trailing sense id: {sx|drill:6||} and
+# cxt "go:1". It is internal bookkeeping and must never reach the page.
+_HOMOGRAPH_ID = re.compile(r":\d+$")
+
+
+def _token_display(match: re.Match) -> str:
+    """The display text of a run-in token, without the homograph id.
+
+    Confined to token replacement so ordinary prose — "a 3:1 ratio" — keeps
+    its colon-digits.
+    """
+    return _HOMOGRAPH_ID.sub("", match.group(1))
 
 
 def _surface(m: GroundedMorpheme) -> str:
@@ -75,7 +87,7 @@ def _clean(text: str) -> str:
     senses (e.g. "more" -> {sx|greater|...}) are *entirely* a cross
     reference with no other prose, so tokens are flattened to their display
     text rather than dropped — dropping risks an empty definition."""
-    text = _PIPED_TOKEN.sub(r"\1", text)
+    text = _PIPED_TOKEN.sub(_token_display, text)
     text = _BARE_TOKEN.sub("", text)
     return re.sub(r"\s+", " ", text).strip()
 
@@ -116,9 +128,7 @@ def _cross_reference(entry: dict) -> str | None:
         return None
     if not isinstance(targets[0], dict):
         return None
-    # MW disambiguates homographs with a trailing sense id ("go:1"), which is
-    # internal bookkeeping and must not reach the page.
-    target = re.sub(r":\d+$", "", _clean(targets[0].get("cxt") or ""))
+    target = _HOMOGRAPH_ID.sub("", _clean(targets[0].get("cxt") or ""))
     return f"{label} {target}" if label and target else None
 
 
