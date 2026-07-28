@@ -16,8 +16,10 @@ import logging
 import os
 from typing import Callable, Sequence
 
+import re
+
 from app import llm
-from app.ground import GroundedMorpheme
+from app.ground import GroundedMorpheme, deaccent
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +54,79 @@ _OUTPUT_FORMAT = {
         "additionalProperties": False,
     },
 }
+
+
+# --- grounding check ---------------------------------------------------------
+# The prompt forbids inventing a meaning for an [unverified] morpheme, but a
+# prompt is not an enforcement mechanism: asked for "environment" (environ
+# [unverified] + -ment "result or means of an action") the model answered
+# "Result or means of surrounding." — correct, and sourced from nothing in
+# the input. A literal_meaning is only publishable if every content word in
+# it traces back to a fact we supplied.
+
+_WORD_RE = re.compile(r"[a-z]+")
+
+# Gloss scaffolding: generic enough to be phrasing rather than a claim about
+# this word's etymology.
+_SCAFFOLD = frozenset("""
+about act action being characterized concerning condition denoting does doing
+done form formed from full given having into kind literal literally made
+manner marked means meaning more most onto past pertaining place plural
+process quality relate relates relating relation result sense singular
+someone something sort state study tense than that these thing this those
+toward upon used which with without word
+""".split())
+
+_MIN_CONTENT_LEN = 4  # shorter tokens are function words in practice
+_STEM_LEN = 3  # ask/asking, move/moving, own/owns all agree on three
+
+# Wiktionary's editorial metalanguage describes the entry, it does not state
+# what the word means. Left in, "By surface analysis, environ + -ment" lends
+# its "surface" to license "surrounding" — the very invention we are hunting.
+_BOILERPLATE = frozenset("""
+analysis attested borrowed calque cognate compare derived doublet equivalent
+inherited learned literally mentioned obsolete perhaps possibly probably
+reconstructed spelling surface uncertain unknown unverified variant
+""".split())
+
+
+def _fact_vocabulary(
+    word: str,
+    morphemes: Sequence[GroundedMorpheme],
+    etymology_texts: Sequence[str],
+) -> set[str]:
+    """Every token the model was actually given."""
+    parts: list[str] = [word]
+    for m in morphemes:
+        parts += [m.surface, m.meaning or "", m.origin or "",
+                  m.source_form or "", m.notes or ""]
+    parts += list(etymology_texts)
+    tokens = {t for p in parts for t in _WORD_RE.findall(deaccent(p).lower())}
+    return tokens - _BOILERPLATE
+
+
+def ungrounded_tokens(
+    literal_meaning: str,
+    word: str,
+    morphemes: Sequence[GroundedMorpheme],
+    etymology_texts: Sequence[str],
+) -> list[str]:
+    """Content words in the output that no input fact supports.
+
+    Matching is stem-ish (first three characters) so that ordinary inflection
+    of a supplied fact — stone/stones, surround/surrounding, ask/asking —
+    counts as grounded.
+    """
+    vocab = _fact_vocabulary(word, morphemes, etymology_texts)
+    stems = {v[:_STEM_LEN] for v in vocab if len(v) >= _STEM_LEN}
+    out: list[str] = []
+    for t in _WORD_RE.findall(deaccent(literal_meaning).lower()):
+        if len(t) < _MIN_CONTENT_LEN or t in _SCAFFOLD or t in vocab:
+            continue
+        if t[:_STEM_LEN] in stems:
+            continue
+        out.append(t)
+    return out
 
 
 def has_facts(morphemes: Sequence[GroundedMorpheme]) -> bool:
@@ -99,7 +174,14 @@ def assemble(
         return None
     try:
         raw = call(ASSEMBLE_SYSTEM, build_user_prompt(word, morphemes, etymology_texts))
-        return str(json.loads(raw)["literal_meaning"])
+        literal = str(json.loads(raw)["literal_meaning"])
     except Exception as exc:
         log.warning("assemble(%s) failed: %s", word, exc)
         return None
+    invented = ungrounded_tokens(literal, word, morphemes, etymology_texts)
+    if invented:
+        # Better a null field than a plausible sentence we cannot source.
+        log.warning("assemble(%s) dropped — ungrounded tokens %s in %r",
+                    word, invented, literal)
+        return None
+    return literal

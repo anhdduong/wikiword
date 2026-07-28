@@ -95,7 +95,7 @@ def _tokens_of(surface: str, canonical: str | None, source_form: str | None) -> 
     return [t.lower() for t in dict.fromkeys(tokens) if len(t) >= 2]
 
 
-def _deaccent(text: str) -> str:
+def deaccent(text: str) -> str:
     """Drop combining marks. Wiktionary writes Latin and transliterated
     Greek with length marks (lex -> lēx, optio -> optiō, thea -> theā), so
     a literal match against an ASCII source_form never fires — which
@@ -109,9 +109,9 @@ def _deaccent(text: str) -> str:
 
 
 def _mentions(text: str, tokens: list[str]) -> bool:
-    low = _deaccent(text).lower()
+    low = deaccent(text).lower()
     return any(
-        re.search(rf"\b{re.escape(_deaccent(t).lower())}\b", low)
+        re.search(rf"\b{re.escape(deaccent(t).lower())}\b", low)
         for t in tokens
     )
 

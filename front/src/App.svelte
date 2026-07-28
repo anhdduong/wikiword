@@ -168,8 +168,9 @@
                 <button
                   class="surface surface-link"
                   title="break down “{m.surface}”"
+                  aria-label="break down {m.surface}"
                   onclick={() => drillInto(m.surface)}
-                >{m.surface}</button>
+                >{m.surface}<span class="drill-hint" aria-hidden="true">↳</span></button>
               {:else}
                 <span class="surface">{m.surface}</span>
               {/if}
@@ -453,25 +454,52 @@
     font-size: 1.3rem;
     font-weight: 700;
   }
+  /* A drillable morpheme is a real navigation affordance, not a hint: it gets
+     a tinted pill, a border and an arrow so it reads as clickable at a
+     glance, next to the plain bound morphemes that are not. */
   button.surface-link {
-    background: none;
-    border: none;
-    padding: 0;
-    border-radius: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #e9f0f7;
+    border: 1px solid #b9cadb;
+    padding: 0.05rem 0.5rem 0.1rem;
+    border-radius: 8px;
     font: inherit;
     font-size: 1.3rem;
     font-weight: 700;
-    color: inherit;
+    color: #2f4a67;
     cursor: pointer;
-    text-decoration: underline;
-    text-decoration-style: dotted;
-    text-decoration-color: #b3a795;
-    text-underline-offset: 4px;
+    text-decoration: none;
+    transition: background 0.12s ease, border-color 0.12s ease,
+                transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .drill-hint {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6b8aa8;
+    transition: transform 0.12s ease, color 0.12s ease;
   }
   button.surface-link:hover,
   button.surface-link:focus-visible {
-    color: #52657a;
-    text-decoration-style: solid;
+    background: #d8e6f3;
+    border-color: #7fa3c4;
+    color: #1d3348;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(47, 74, 103, 0.18);
+  }
+  button.surface-link:hover .drill-hint,
+  button.surface-link:focus-visible .drill-hint {
+    color: #2f4a67;
+    transform: translateX(2px);
+  }
+  button.surface-link:focus-visible {
+    outline: 2px solid #2f4a67;
+    outline-offset: 2px;
+  }
+  button.surface-link:active {
+    transform: translateY(0);
+    box-shadow: none;
   }
   .chip {
     font-size: 0.7rem;

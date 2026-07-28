@@ -102,3 +102,63 @@ def test_model_version_covers_assemble_prompt():
     finally:
         version.assemble.ASSEMBLE_SYSTEM = original
     assert version.model_version() == v1
+
+
+# --- the grounding check ----------------------------------------------------
+# A prompt rule is not enforcement. Asked for "environment" (environ
+# [unverified] + -ment "result or means of an action") the model answered
+# "Result or means of surrounding." — right, and sourced from nothing it was
+# given. Every content word must trace back to a supplied fact.
+
+ENVIRON = gm("environ", "unknown")
+MENT = gm("ment", "suffix", "Latin", "-mentum", "result or means of an action",
+          True)
+ENV_TEXT = ["From Middle French environnement. By surface analysis,"
+            " environ + -ment."]
+
+
+def test_invented_meaning_for_an_unverified_morpheme_is_dropped():
+    call = fake_call(json.dumps(
+        {"literal_meaning": "Result or means of surrounding."}))
+    assert assemble("environment", [ENVIRON, MENT], ENV_TEXT, call) is None
+
+
+def test_meaning_grounded_in_the_fetched_text_survives():
+    # Same shape, but now the retrieved prose states environ's sense, so the
+    # synthesis is sourced and must be kept.
+    texts = ['From Old French environ ("around, surrounding"), + -ment.']
+    call = fake_call(json.dumps(
+        {"literal_meaning": "Result or means of surrounding."}))
+    assert assemble("environment", [ENVIRON, MENT], texts, call) == (
+        "Result or means of surrounding.")
+
+
+def test_unverified_marker_never_leaks_into_prose():
+    # Seen in production: 'State or quality of not [unverified].'
+    call = fake_call(json.dumps(
+        {"literal_meaning": "State or quality of not [unverified]."}))
+    assert assemble("insurance", [gm("sur", "unknown"), MENT], [], call) is None
+
+
+def test_inflected_forms_of_a_supplied_fact_count_as_grounded():
+    # "stones" must not read as invented just because the table says "stone".
+    call = fake_call(json.dumps({"literal_meaning": "Made of single stones."}))
+    assert assemble("monolithic", [MONO, LITH], [], call) == (
+        "Made of single stones.")
+
+
+def test_a_meaning_that_contradicts_the_given_gloss_is_dropped():
+    # along: a- is supplied as "not, without"; "against" is the model's own.
+    a = gm("a", "prefix", "Latin", "a-", "not, without", True)
+    call = fake_call(json.dumps({"literal_meaning": "Against long."}))
+    assert assemble("along", [a, gm("long", "word")], [], call) is None
+
+
+@pytest.mark.parametrize("meaning", [
+    "Relating to a single stone.",
+    "One who is characterized by a single stone.",
+    "The state or quality of being single.",
+])
+def test_ordinary_syntheses_are_not_rejected(meaning):
+    call = fake_call(json.dumps({"literal_meaning": meaning}))
+    assert assemble("monolithic", [MONO, LITH, IC], [], call) == meaning

@@ -1,5 +1,6 @@
 """Admin review flow. Tests in this module share one app and consume queue
-entries in order (approve eats 'therm', promote eats 'awk', ...).
+entries in order (approve eats 'therm', promote eats 'awk', and the two
+promote-rejection tests need a survivor, currently anchor's 'hor').
 
 Words used here must be real and their unknown spans must clear
 ground.MIN_QUEUE_SURFACE: short residues (the 's' of strengths) and every
@@ -24,7 +25,7 @@ def api(tmp_path_factory):
     conn.close()
     with TestClient(create_app(db_path)) as client:
         # Populate the review queue through real lookups.
-        for word in ("hypothermia", "awkward", "environment"):
+        for word in ("hypothermia", "awkward", "anchor"):
             client.get("/lookup", params={"word": word})
         yield client, db_path
 
@@ -119,7 +120,7 @@ def test_promote_creates_curated_affix_and_next_lookup_uses_it(api):
 
 def test_promote_duplicate_conflicts(api):
     client, _ = api
-    q = entry_by_surface(client, "env")
+    q = entry_by_surface(client, "hor")
     resp = client.post(f"/admin/queue/{q['id']}/promote", json={
         "canonical": "awk",
         "type": "root",
@@ -128,12 +129,12 @@ def test_promote_duplicate_conflicts(api):
         "forms": ["awk"],
     })
     assert resp.status_code == 409
-    assert entry_by_surface(client, "env") is not None  # entry survives
+    assert entry_by_surface(client, "hor") is not None  # entry survives
 
 
 def test_promote_invalid_type_rejected(api):
     client, _ = api
-    q = entry_by_surface(client, "env")
+    q = entry_by_surface(client, "hor")
     resp = client.post(f"/admin/queue/{q['id']}/promote", json={
         "canonical": "x-",
         "type": "infix",
