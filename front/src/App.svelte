@@ -15,6 +15,21 @@
     unverified: 'unverified',
   };
 
+  // app/main.py joins the not-found warning into status_note alongside the
+  // grounding notes. It gets its own prominent callout here, so strip it
+  // from the muted line rather than saying it twice.
+  const UNRECOGNIZED_NOTE =
+    'word not found in any dictionary source — possible misspelling';
+
+  function mutedNote(note) {
+    if (!note) return null;
+    const rest = note
+      .split('; ')
+      .filter((part) => part !== UNRECOGNIZED_NOTE)
+      .join('; ');
+    return rest || null;
+  }
+
   async function lookup(event) {
     event?.preventDefault();
     const w = word.trim().toLowerCase();
@@ -87,16 +102,32 @@
         <span class="badge status-{data.status}">{STATUS_LABEL[data.status] ?? data.status}</span>
       </div>
 
-      {#if data.status_note}
-        <p class="status-note">{data.status_note}</p>
+      {#if data.unrecognized}
+        <div class="box notfound">
+          <p class="notfound-head">
+            <span class="notfound-icon" aria-hidden="true">⚠</span>
+            <strong>“{data.word}” isn’t a word we could find</strong>
+          </p>
+          <p class="notfound-body">
+            No dictionary source has an entry for it, so it’s likely a
+            misspelling. The breakdown below is what these letters
+            <em>would</em> mean if it were a word.
+          </p>
+          {#if data.suggestions?.length}
+            <div class="suggestions">
+              <span class="suggestions-label">did you mean</span>
+              {#each data.suggestions as s}
+                <button class="suggestion" onclick={() => { word = s; lookup(); }}>
+                  {s}
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
       {/if}
 
-      {#if data.suggestions?.length}
-        <p class="suggestions">
-          did you mean:
-          {#each data.suggestions as s, i}{#if i},
-            {/if}<button class="link" onclick={() => { word = s; lookup(); }}>{s}</button>{/each}?
-        </p>
+      {#if mutedNote(data.status_note)}
+        <p class="status-note">{mutedNote(data.status_note)}</p>
       {/if}
 
       {#if data.conflicts?.length}
@@ -321,14 +352,54 @@
     font-size: 0.9rem;
     margin: 0.5rem 0 0;
   }
-  .suggestions {
-    color: #6d6558;
-    font-size: 0.95rem;
-    margin: 0.4rem 0 0;
+  .notfound {
+    background: #fdf0e5;
+    border: 1.5px solid #d9863b;
+    border-left-width: 5px;
   }
-  .suggestions button.link {
+  .notfound-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    font-size: 1.05rem;
+    color: #7a4410;
+  }
+  .notfound-icon {
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+  .notfound-body {
+    margin: 0.4rem 0 0;
+    color: #6b5334;
     font-size: 0.95rem;
-    margin-right: 0.5rem;
+  }
+  .suggestions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+  }
+  .suggestions-label {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8a6d3b;
+    margin-right: 0.15rem;
+  }
+  button.suggestion {
+    font-size: 0.95rem;
+    padding: 0.28rem 0.75rem;
+    border-radius: 99px;
+    background: #fff;
+    color: #7a4410;
+    border: 1.5px solid #d9a86b;
+  }
+  button.suggestion:hover {
+    background: #7a4410;
+    border-color: #7a4410;
+    color: #fff;
   }
   .morphemes {
     display: flex;
