@@ -217,6 +217,20 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                 prose_notes.append(
                     "dictionary lookup failed for this request (uncached)"
                 )
+            elif not compose_module.definitions_enabled():
+                prose_notes.append(
+                    "dictionary lookup disabled (no API key configured)"
+                )
+            elif not unrecognized:
+                # A definitive miss used to fall through every branch, so the
+                # field simply vanished: "no entry in the dictionary", "no key
+                # configured" and "we never asked" all rendered as an absence.
+                # The page promises every fact grounded or labeled — an
+                # absence is a fact about the word and has to be labeled too.
+                prose_notes.append(
+                    "no Merriam-Webster entry for this spelling — usually rare,"
+                    " obsolete, or specialist vocabulary"
+                )
             assemble_note = "; ".join(prose_notes) or None
 
             note_parts = [

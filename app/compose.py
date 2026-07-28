@@ -52,6 +52,16 @@ def _mw_key() -> str | None:
     return os.environ.get("WIKIWORD_MW_API_KEY")
 
 
+def definitions_enabled() -> bool:
+    """Whether a dictionary is reachable at all.
+
+    Lets a caller tell "this deployment has no key" from "the dictionary has
+    no entry for this word" — fetch_definition() reports both as a definitive
+    (None, True), but only the second says anything about the word.
+    """
+    return _mw_key() is not None
+
+
 def _mw_url(word: str) -> str:
     return (
         "https://www.dictionaryapi.com/api/v3/references/collegiate/json/"
@@ -87,6 +97,29 @@ def _first_text(node) -> str | None:
             if found is not None:
                 return found
     return None
+
+
+def _cross_reference(entry: dict) -> str | None:
+    """MW's gloss for an inflected headword.
+
+    said, were and brought are all real entries, but they carry no "def" —
+    only a cross-reference ("past tense and past participle of" -> "say").
+    Reading def alone threw those away and reported no definition for some of
+    the commonest words in English.
+    """
+    cxs = entry.get("cxs")
+    if not isinstance(cxs, list) or not cxs or not isinstance(cxs[0], dict):
+        return None
+    label = _clean(cxs[0].get("cxl") or "")
+    targets = cxs[0].get("cxtis")
+    if not isinstance(targets, list) or not targets:
+        return None
+    if not isinstance(targets[0], dict):
+        return None
+    # MW disambiguates homographs with a trailing sense id ("go:1"), which is
+    # internal bookkeeping and must not reach the page.
+    target = re.sub(r":\d+$", "", _clean(targets[0].get("cxt") or ""))
+    return f"{label} {target}" if label and target else None
 
 
 def fetch_definition(
@@ -125,6 +158,10 @@ def fetch_definition(
     text = _first_text(entry.get("def"))
     definition = _clean(text) if text else ""
     if not definition:
+        # An inflected headword defines itself by pointing at its base form.
+        cross = _cross_reference(entry)
+        if cross:
+            return cross, True
         return None, True
     pos = entry.get("fl")
     return (f"({pos}) {definition}" if pos else definition), True

@@ -1,8 +1,14 @@
 import json
 
+import pytest
+
 import urllib.error
 
-from app.compose import fetch_definition, literal_meaning
+from app.compose import (
+    definitions_enabled,
+    fetch_definition,
+    literal_meaning,
+)
 from app.ground import GroundedMorpheme
 
 
@@ -154,3 +160,64 @@ def test_model_version_covers_compose():
     finally:
         version.compose.COMPOSE_VERSION = original
     assert version.model_version() == v1
+
+
+# --- inflected headwords ----------------------------------------------------
+# said, were, brought and these are ordinary MW entries that carry no "def",
+# only a cross-reference to the base form. Reading def alone reported "no
+# definition" for some of the commonest words in English.
+
+MW_INFLECTION_ENTRY = {
+    "meta": {"id": "said:1"},
+    "hwi": {"hw": "said"},
+    "cxs": [{"cxl": "past tense and past participle of",
+             "cxtis": [{"cxt": "say"}]}],
+}
+
+MW_HOMOGRAPH_XREF_ENTRY = {
+    "meta": {"id": "goes"},
+    "hwi": {"hw": "goes"},
+    "cxs": [{"cxl": "present tense third-person singular of",
+             "cxtis": [{"cxt": "go:1"}]}],
+}
+
+
+def test_inflected_entry_falls_back_to_its_cross_reference(monkeypatch):
+    monkeypatch.setenv("WIKIWORD_MW_API_KEY", "k")
+    assert fetch_definition(
+        "said",
+        http_get=lambda url: (200, json.dumps([MW_INFLECTION_ENTRY]).encode()),
+    ) == ("past tense and past participle of say", True)
+
+
+def test_cross_reference_strips_the_homograph_id(monkeypatch):
+    # "of go:1" is MW's internal bookkeeping and must not reach the page.
+    monkeypatch.setenv("WIKIWORD_MW_API_KEY", "k")
+    definition, _ = fetch_definition(
+        "goes",
+        http_get=lambda url: (200,
+                              json.dumps([MW_HOMOGRAPH_XREF_ENTRY]).encode()),
+    )
+    assert definition == "present tense third-person singular of go"
+
+
+@pytest.mark.parametrize("cxs", [
+    [],
+    [{"cxl": "past tense of"}],                    # no target
+    [{"cxtis": [{"cxt": "say"}]}],                 # no label
+    [{"cxl": "past tense of", "cxtis": []}],
+    "not-a-list",
+])
+def test_malformed_cross_reference_is_a_clean_miss(monkeypatch, cxs):
+    monkeypatch.setenv("WIKIWORD_MW_API_KEY", "k")
+    entry = {"meta": {"id": "x"}, "hwi": {"hw": "x"}, "cxs": cxs}
+    assert fetch_definition(
+        "x", http_get=lambda url: (200, json.dumps([entry]).encode())
+    ) == (None, True)
+
+
+def test_definitions_enabled_tracks_the_key(monkeypatch):
+    monkeypatch.delenv("WIKIWORD_MW_API_KEY", raising=False)
+    assert definitions_enabled() is False
+    monkeypatch.setenv("WIKIWORD_MW_API_KEY", "k")
+    assert definitions_enabled() is True

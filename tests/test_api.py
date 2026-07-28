@@ -388,3 +388,35 @@ def test_real_word_is_not_flagged(api):
     assert "misspelling" not in (body["status_note"] or "")
     assert body["unrecognized"] is False
     assert body["suggestions"] == []
+
+
+def test_definitive_dictionary_miss_is_labeled(api, monkeypatch):
+    # philosophist is a real word with a real etymology, so it is NOT
+    # "unrecognized" — but Merriam-Webster has no entry for it. That used to
+    # fall through every branch and the field simply vanished, which breaks
+    # the page's promise: every fact grounded, or labeled.
+    from app import compose as compose_module
+
+    client, _ = api
+    monkeypatch.setattr(
+        compose_module, "fetch_definition", lambda word, **kw: (None, True)
+    )
+    monkeypatch.setattr(compose_module, "definitions_enabled", lambda: True)
+    body = client.get("/lookup", params={"word": "microscope"}).json()
+    assert body["modern_usage"] is None
+    assert body["unrecognized"] is False
+    assert "no Merriam-Webster entry" in body["status_note"]
+
+
+def test_missing_api_key_is_labeled_as_a_deployment_state(api, monkeypatch):
+    # "we never asked" must not read as "the dictionary has no entry".
+    from app import compose as compose_module
+
+    client, _ = api
+    monkeypatch.setattr(
+        compose_module, "fetch_definition", lambda word, **kw: (None, True)
+    )
+    monkeypatch.setattr(compose_module, "definitions_enabled", lambda: False)
+    body = client.get("/lookup", params={"word": "geology"}).json()
+    assert "no API key configured" in body["status_note"]
+    assert "no Merriam-Webster entry" not in body["status_note"]
