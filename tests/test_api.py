@@ -163,9 +163,11 @@ def test_lookup_populates_review_queue(api):
         "SELECT surface FROM review_queue WHERE seen_in = 'hypothermia'"
     )}
     conn.close()
-    # hypo|therm|ia — all still reviewed=0 in affixes.csv, so all queue.
-    # (hydrophobia no longer works here: hydro and phob are curated now.)
-    assert {"hypo", "therm", "ia"} <= surfaces
+    # hypo|therm|ia — hypo and therm are still reviewed=0 in affixes.csv, so
+    # they queue; -ia is curated now and must not. (hydrophobia no longer
+    # works here either: hydro and phob are curated too.)
+    assert {"hypo", "therm"} <= surfaces
+    assert "ia" not in surfaces
 
 
 def test_llm_disabled_falls_back_to_cost_order(api):

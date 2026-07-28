@@ -390,3 +390,34 @@ def test_respan_roots_do_not_overreach(lex, word):
     top = segment(word, lex)[0]
     for p in top.pieces:
         assert p.kind in ("free", "unknown", "suffix"), f"{word} -> {surfaces(top)}"
+
+
+# --- the -ia suffix (held-back two-letter approvals) -------------------------
+# -ia is the one short form from that batch worth curating: it names places
+# and diseases. The others (ad-'s ac/af/al/ap/ar/at, de-, ex-/ef-, in-'s
+# im/il/ir) stay at reviewed=0 — approving them re-cut hundreds of words for
+# the worse (arrested -> ar+rested, images -> im+ages), which the penalty
+# correctly suppresses.
+
+@pytest.mark.parametrize("word,expected", [
+    ("pneumonia", ["pneu", "mon", "ia"]),
+    ("hysteria", ["hys", "ter", "ia"]),
+    ("syria", ["syr", "ia"]),
+    ("india", ["ind", "ia"]),
+    ("olympia", ["olymp", "ia"]),
+    ("homophobia", ["homo", "phob", "ia"]),
+    ("pizzeria", ["pizzer", "ia"]),
+])
+def test_ia_suffix_splits_place_and_disease_names(lex, word, expected):
+    assert surfaces(segment(word, lex)[0]) == expected
+
+
+@pytest.mark.parametrize("word", [
+    # -ia must not strand a residue too short to be a morpheme. These are
+    # blocked per-word rather than by dropping the form.
+    "via", "cia", "mia", "gaia", "shia", "croatia", "columbia",
+])
+def test_ia_never_strands_a_short_residue(lex, word):
+    assert not any(
+        p.surface == "ia" for p in segment(word, lex)[0].pieces
+    ), word

@@ -158,10 +158,11 @@ def test_etymology_tree_lineage_is_not_a_conflict(db, lex):
 
 def test_unreviewed_morphemes_enter_review_queue(db, lex):
     before = queue_surfaces(db)
-    cand = segment("hypothermia", lex)[0]  # hypo + therm + ia, all reviewed=0
+    cand = segment("hypothermia", lex)[0]  # hypo + therm still reviewed=0
     ground(db, "hypothermia", cand, [])
     after = queue_surfaces(db)
-    assert {"hypo", "therm", "ia"} <= after - before or {"hypo", "therm", "ia"} <= after
+    assert {"hypo", "therm"} <= after
+    assert "ia" not in after  # curated rows never queue
     row = connect_row(db, "therm")
     proposed = json.loads(row["proposed"])
     assert proposed["gloss"] == "heat"
