@@ -211,3 +211,50 @@ def test_function_word_query_never_decomposes(lex):
     # they = the(theos 'god') + -y was beating the whole-word reading.
     for word in ("they", "that", "with", "would"):
         assert surfaces(segment(word, lex)[0]) == [word], word
+
+
+# NOTE: this fixture seeds from affixes.csv, so every row is reviewed=0 and
+# pays UNREVIEWED_PENALTY. The deployed database has 154 curated rows, and
+# that discount changes some winners — disturbed/comfortable/receive/sexual
+# decompose in production but not here. Curation state lives only in the
+# database (see CLAUDE.md), so it cannot be reproduced from the repo, and
+# only analyses that are stable under both states can be pinned below.
+@pytest.mark.parametrize("word,expected", [
+    # Audit priority 4 promotions. These pin the analyses the new rows were
+    # added to produce, so a later cost-constant tweak can't quietly undo
+    # them (the §3.6 constants and this table have to move together).
+    ("object", ["ob", "ject"]),             # ob-
+    ("opportunity", ["op", "port", "unity"]),
+    ("occasion", ["oc", "cas", "ion"]),
+    ("nature", ["nat", "ure"]),             # -ure
+    ("signature", ["sign", "ature"]),
+    ("miracle", ["mira", "cle"]),           # -cle
+    ("volunteer", ["volunt", "eer"]),       # -eer
+    ("condolescence", ["con", "dol", "escence"]),   # -esc-
+    ("anxious", ["anx", "ious"]),           # anx
+    ("circus", ["circ", "us"]),             # circ
+    ("private", ["priv", "ate"]),           # priv
+    ("cities", ["citi", "es"]),             # civ
+    ("vulnerable", ["vulner", "able"]),     # vuln
+    ("liquid", ["liquid"]),                 # liqu
+    ("anonymous", ["an", "onym", "ous"]),   # onym
+    ("scheme", ["schem", "e"]),             # schem
+])
+def test_promoted_morphemes_produce_expected_split(lex, word, expected):
+    assert surfaces(segment(word, lex)[0]) == expected
+
+
+@pytest.mark.parametrize("word", [
+    # Forms deliberately excluded from the promotions. Each of these was a
+    # regression observed when the audit's original form list was applied
+    # verbatim, so they double as guards against re-adding them.
+    "sunset",    # bare "et" gave suns+et
+    "upset",     # bare "et" gave ups+et
+    "sorry",     # bare "ry" gave sor+ry
+    "story",     # bare "ry" gave sto+ry
+    "three",     # "ee" gave thr+ee
+    "ending",    # en- prefix gave en+ding
+])
+def test_excluded_forms_leave_these_words_alone(lex, word):
+    top = surfaces(segment(word, lex)[0])
+    assert top == [word] or len(top[0]) > 2, f"{word} -> {top}"

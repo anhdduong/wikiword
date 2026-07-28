@@ -240,29 +240,29 @@ def test_short_unknown_spans_are_not_queued(db, lex):
 
 def test_long_unknown_spans_still_queue(db, lex):
     # The length guard must not silence real candidates for curation.
-    cand = segment("psychiatrist", lex)[0]
+    cand = segment("exclusive", lex)[0]
     unknown = [p.surface for p in cand.pieces if p.kind == "unknown"]
     assert any(len(u) >= 3 for u in unknown)
-    ground(db, "psychiatrist", cand, [])
+    ground(db, "exclusive", cand, [])
     assert queue_surfaces(db) & {u for u in unknown if len(u) >= 3}
 
 
 def test_proper_nouns_never_queue(db, lex, monkeypatch):
-    monkeypatch.setattr("app.ground.PROPER_NOUNS", frozenset({"psychiatrist"}))
-    cand = segment("psychiatrist", lex)[0]
+    monkeypatch.setattr("app.ground.PROPER_NOUNS", frozenset({"aggressive"}))
+    cand = segment("aggressive", lex)[0]
     before = queue_surfaces(db)
-    ground(db, "psychiatrist", cand, [])
+    ground(db, "aggressive", cand, [])
     assert queue_surfaces(db) == before
 
 
 def test_curate_false_suppresses_queue_without_changing_output(db, lex):
     # Unrecognised words (likely misspellings) segment into artefacts; the
     # payload must be identical, only the curation side effect is dropped.
-    cand = segment("psychiatrist", lex)[0]
+    cand = segment("ambassador", lex)[0]
     before = queue_surfaces(db)
-    quiet = ground(db, "psychiatrist", cand, [], curate=False)
+    quiet = ground(db, "ambassador", cand, [], curate=False)
     assert queue_surfaces(db) == before
-    loud = ground(db, "psychiatrist", cand, [], curate=True)
+    loud = ground(db, "ambassador", cand, [], curate=True)
     assert quiet.morphemes == loud.morphemes
     assert quiet.status == loud.status
 

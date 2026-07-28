@@ -209,3 +209,34 @@ volv,root,Latin,volvere,"to roll, turn",,volv|volut,volvere
 -y,suffix,Old English,-ig,"characterized by, full of","single-letter form is highly ambiguous — expect cost-function reliance",y,-y
 -y,suffix,Ancient Greek,-ia,"state, condition, or quality","abstract-noun-forming sense (philosophy, economy, agony), via Latin -ia / Old French -ie — distinct from the Old English adjective-forming -y above; single-letter form is highly ambiguous",y,-y
 -esque,suffix,French,-esque,"in the style of, resembling",from Italian -esco,esque,-esque
+ob-,prefix,Latin,ob,"toward, against, in the way of","assimilates before the stem consonant (occur, offer, oppose)",ob|oc|of|op,ob-
+oct-,prefix,Latin,octo,eight,October was the eighth month of the Roman calendar,oct|octo|octa,oct-
+-ure,suffix,Latin,-ura,"act, process, or result of",,ure|ature|ture,-ure
+-cle,suffix,Latin,-culus,diminutive: small,,cle|cule|culum,-cle
+-et,suffix,French,-ittus,diminutive: small,via Old French from Latin -ittus. Bare 'et' deliberately excluded: it splits sunset/upset/quiet/sheet more often than it finds a real diminutive,ette|let,-et
+-eer,suffix,French,-ier,one concerned with,,eer|ier,-eer
+-ry,suffix,French,-erie,"condition, practice, or collective",bare 'ry' deliberately excluded: it out-competes the -y suffix on carry/sorry/story and on every -ry given name,ery,-ry
+-esc-,suffix,Latin,-escere,"beginning to, becoming (inchoative)","adolescence, convalescent, incandescent",esc|escent|escence,-esc-
+turb,root,Latin,turbare,"to stir up, throw into confusion",,turb|turbul,turbare
+flict,root,Latin,fligere,to strike,,flict|flig,fligere
+var,root,Latin,varius,"varied, changing, different",,var|vari,varius
+anx,root,Latin,angere,"to choke, press, distress",form 'ang' deliberately excluded: it leaves a one-letter stem on rang/sang/yang and every -ang name,anx,angere
+circ,root,Latin,circus,"ring, circle",,circ|circul,circus
+priv,root,Latin,privus,"one's own, separate",,priv|privat,privus
+civ,root,Latin,civis,"citizen, city","form 'cit' deliberately excluded: cite/excite/recite are Latin citare 'to summon', an unrelated root",civ|citi,civis
+vuln,root,Latin,vulnus,wound,,vuln|vulner,vulnus
+cand,root,Latin,candere,"to shine, glow, be white","form 'cens' deliberately excluded: census/censor are Latin censere 'to assess', an unrelated root",cand|candid,candere
+liqu,root,Latin,liquere,to be fluid,,liqu|liquid|liquor,liquere
+splend,root,Latin,splendere,"to shine, be bright",,splend|splendid,splendere
+fort,root,Latin,fortis,strong,,fort|forc|fortit,fortis
+equ,root,Latin,aequus,"equal, level, even",,equ|equi|iqu,aequus
+exerc,root,Latin,exercere,"to keep busy, train",,exerc|exercit,exercere
+prior,root,Latin,prior,"former, earlier","forms 'prim'/'prin' deliberately excluded: they belong to the existing primus row, and prior/primus are distinct Latin lexemes",prior,prior
+typ,root,Ancient Greek,typos,"impression, stamp, model",,typ|typo,typos
+bol,root,Ancient Greek,ballein,"to throw, cast",forms 'ble'/'bl' deliberately excluded: they collide with the -able/-ible suffixes and are too short to survive the cost function,bol,ballein
+iatr,root,Ancient Greek,iatros,"healer, physician",,iatr|iatri,iatros
+onym,root,Ancient Greek,onoma,name,,onym|onoma|nym,onoma
+myth,root,Ancient Greek,mythos,"story, tale, speech",,myth|mytho,mythos
+schem,root,Ancient Greek,schema,"form, figure, plan",,schem|schemat,schema
+rhythm,root,Ancient Greek,rhythmos,measured flow,,rhythm|rhyth,rhythmos
+phras,root,Ancient Greek,phrazein,"to speak, declare",,phras|phrase,phrazein
