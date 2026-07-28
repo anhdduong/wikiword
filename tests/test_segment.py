@@ -213,12 +213,10 @@ def test_function_word_query_never_decomposes(lex):
         assert surfaces(segment(word, lex)[0]) == [word], word
 
 
-# NOTE: this fixture seeds from affixes.csv, so every row is reviewed=0 and
-# pays UNREVIEWED_PENALTY. The deployed database has 154 curated rows, and
-# that discount changes some winners — disturbed/comfortable/receive/sexual
-# decompose in production but not here. Curation state lives only in the
-# database (see CLAUDE.md), so it cannot be reproduced from the repo, and
-# only analyses that are stable under both states can be pinned below.
+# affixes.csv carries the `reviewed` column, so this fixture reproduces the
+# deployed lexicon's curation state — and therefore its costs, since
+# reviewed rows skip UNREVIEWED_PENALTY. Analyses that depend on curation
+# (disturbed, comfortable, receive, sexual) are pinnable because of it.
 @pytest.mark.parametrize("word,expected", [
     # Audit priority 4 promotions. These pin the analyses the new rows were
     # added to produce, so a later cost-constant tweak can't quietly undo
@@ -231,14 +229,18 @@ def test_function_word_query_never_decomposes(lex):
     ("miracle", ["mira", "cle"]),           # -cle
     ("volunteer", ["volunt", "eer"]),       # -eer
     ("condolescence", ["con", "dol", "escence"]),   # -esc-
+    ("disturbed", ["dis", "turb", "ed"]),   # turb
     ("anxious", ["anx", "ious"]),           # anx
     ("circus", ["circ", "us"]),             # circ
     ("private", ["priv", "ate"]),           # priv
     ("cities", ["citi", "es"]),             # civ
     ("vulnerable", ["vulner", "able"]),     # vuln
     ("liquid", ["liquid"]),                 # liqu
+    ("comfortable", ["com", "fort", "able"]),   # fort
     ("anonymous", ["an", "onym", "ous"]),   # onym
     ("scheme", ["schem", "e"]),             # schem
+    ("receive", ["re", "ceive"]),           # cap extension
+    ("sexual", ["sex", "ual"]),             # -al extension
 ])
 def test_promoted_morphemes_produce_expected_split(lex, word, expected):
     assert surfaces(segment(word, lex)[0]) == expected

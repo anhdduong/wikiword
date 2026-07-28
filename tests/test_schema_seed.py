@@ -71,6 +71,40 @@ def test_seed_is_idempotent(seeded):
     )
 
 
+def test_seed_applies_reviewed_from_csv(seeded):
+    # `reviewed` is not bookkeeping: the segmenter discounts reviewed rows
+    # by UNREVIEWED_PENALTY. If the seed file could not carry it, a freshly
+    # built database would segment differently from the deployed one.
+    counts = dict(
+        seeded.execute("SELECT reviewed, COUNT(*) FROM affix GROUP BY reviewed")
+    )
+    assert counts.get(1), "no curated rows survived the seed"
+    assert counts.get(0), "expected some rows still awaiting review"
+
+
+def test_reseed_never_drops_a_form(seeded):
+    # seed()'s update path deletes and rewrites a row's forms from the CSV,
+    # so a form added to the database but not mirrored into affixes.csv is
+    # silently destroyed on the next run. This caught exactly that: the
+    # cap/-al/techn extension forms lived only in the database.
+    before = {
+        (r["canonical"], r["form"])
+        for r in seeded.execute(
+            "SELECT a.canonical, f.form FROM affix_form f"
+            " JOIN affix a ON a.id = f.affix_id"
+        )
+    }
+    seed(seeded)
+    after = {
+        (r["canonical"], r["form"])
+        for r in seeded.execute(
+            "SELECT a.canonical, f.form FROM affix_form f"
+            " JOIN affix a ON a.id = f.affix_id"
+        )
+    }
+    assert after == before
+
+
 def test_reseed_preserves_curation_state(seeded):
     seeded.execute(
         "UPDATE affix SET reviewed = 1, citations = '[\"https://example.org\"]'"

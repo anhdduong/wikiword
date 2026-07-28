@@ -1,9 +1,11 @@
 """Admin review flow. Tests in this module share one app and consume queue
-entries in order (approve eats 'mono', promote eats 'aggr', ...).
+entries in order (approve eats 'therm', promote eats 'aggr', ...).
 
 Words used here must be real and their unknown spans must clear
 ground.MIN_QUEUE_SURFACE: short residues (the 's' of strengths) and every
-span of an unrecognised word (qzxvqx) are deliberately never queued."""
+span of an unrecognised word (qzxvqx) are deliberately never queued. The
+affix-backed entries must also come from rows still at reviewed=0 in
+affixes.csv — curated rows no longer queue at all."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -22,7 +24,7 @@ def api(tmp_path_factory):
     conn.close()
     with TestClient(create_app(db_path)) as client:
         # Populate the review queue through real lookups.
-        for word in ("monolithic", "aggressive", "exclusive"):
+        for word in ("hypothermia", "aggressive", "exclusive"):
             client.get("/lookup", params={"word": word})
         yield client, db_path
 
@@ -34,11 +36,11 @@ def entry_by_surface(client, surface):
 
 def test_queue_lists_entries_with_affix_info(api):
     client, _ = api
-    mono = entry_by_surface(client, "mono")
-    assert mono is not None
-    assert mono["seen_in"] == "monolithic"
-    assert mono["affix"]["canonical"] == "mono-"
-    assert mono["affix"]["reviewed"] == 0
+    therm = entry_by_surface(client, "therm")
+    assert therm is not None
+    assert therm["seen_in"] == "hypothermia"
+    assert therm["affix"]["canonical"] == "therm"
+    assert therm["affix"]["reviewed"] == 0
     unknown = entry_by_surface(client, "aggr")
     assert unknown is not None
     assert unknown["affix"] is None
@@ -47,18 +49,18 @@ def test_queue_lists_entries_with_affix_info(api):
 
 def test_approve_marks_reviewed_and_clears_cache(api):
     client, db_path = api
-    mono = entry_by_surface(client, "mono")
-    resp = client.post(f"/admin/queue/{mono['id']}/approve")
+    therm = entry_by_surface(client, "therm")
+    resp = client.post(f"/admin/queue/{therm['id']}/approve")
     assert resp.status_code == 200
     conn = connect(db_path)
     row = conn.execute(
-        "SELECT reviewed FROM affix WHERE canonical = 'mono-'"
+        "SELECT reviewed FROM affix WHERE canonical = 'therm'"
     ).fetchone()
     cached = conn.execute("SELECT COUNT(*) c FROM word_cache").fetchone()["c"]
     conn.close()
     assert row["reviewed"] == 1
     assert cached == 0  # curation invalidates the cache
-    assert entry_by_surface(client, "mono") is None
+    assert entry_by_surface(client, "therm") is None
 
 
 def test_approve_unknown_entry_is_rejected(api):
@@ -69,12 +71,12 @@ def test_approve_unknown_entry_is_rejected(api):
 
 def test_dismiss_removes_entry_only(api):
     client, db_path = api
-    lith = entry_by_surface(client, "lith")
-    assert client.post(f"/admin/queue/{lith['id']}/dismiss").status_code == 200
-    assert entry_by_surface(client, "lith") is None
+    hypo = entry_by_surface(client, "hypo")
+    assert client.post(f"/admin/queue/{hypo['id']}/dismiss").status_code == 200
+    assert entry_by_surface(client, "hypo") is None
     conn = connect(db_path)
     row = conn.execute(
-        "SELECT reviewed FROM affix WHERE canonical = 'lith'"
+        "SELECT reviewed FROM affix WHERE canonical = 'hypo-'"
     ).fetchone()
     conn.close()
     assert row["reviewed"] == 0  # dismiss never touches the lexicon

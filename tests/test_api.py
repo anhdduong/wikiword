@@ -157,14 +157,15 @@ def test_corroborated_etymology_attaches_citation(api, monkeypatch):
 
 def test_lookup_populates_review_queue(api):
     client, db_path = api
-    client.get("/lookup", params={"word": "hydrophobia"})
+    client.get("/lookup", params={"word": "hypothermia"})
     conn = connect(db_path)
     surfaces = {r["surface"] for r in conn.execute(
-        "SELECT surface FROM review_queue WHERE seen_in = 'hydrophobia'"
+        "SELECT surface FROM review_queue WHERE seen_in = 'hypothermia'"
     )}
     conn.close()
-    # hydro|phob|ia — all reviewed=0 seed rows, queued for curation.
-    assert {"hydro", "phob", "ia"} <= surfaces
+    # hypo|therm|ia — all still reviewed=0 in affixes.csv, so all queue.
+    # (hydrophobia no longer works here: hydro and phob are curated now.)
+    assert {"hypo", "therm", "ia"} <= surfaces
 
 
 def test_llm_disabled_falls_back_to_cost_order(api):

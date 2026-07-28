@@ -4,6 +4,14 @@ Idempotent: rows are keyed on (canonical, type, gloss). Re-running updates
 origin/source_form/notes and replaces the form set, but never touches
 `reviewed` or `citations` on existing rows — those are curation state owned
 by the review flow, not the seed file.
+
+`reviewed` is applied from the CSV on INSERT only. It has to be in the seed
+file because it is not merely bookkeeping: the segmenter gives reviewed rows
+a UNREVIEWED_PENALTY discount, so a database seeded fresh from a CSV that
+lost that column segments differently from the deployed one, and no test
+can pin production behaviour. Writing it on insert but never on update
+keeps both properties: a fresh build reproduces the curated lexicon, and a
+running database's curation state still belongs to the admin flow.
 """
 
 from __future__ import annotations
@@ -32,6 +40,14 @@ def seed(conn: sqlite3.Connection, csv_path: Path = SEED_CSV) -> dict[str, int]:
         forms = [s for s in row["forms"].split("|") if s]
         if not forms:
             raise ValueError(f"{csv_path.name} line {i}: no forms for {canonical!r}")
+        # Absent column (an older seed file) means uncurated, not an error.
+        raw_reviewed = (row.get("reviewed") or "0").strip()
+        if raw_reviewed not in ("0", "1"):
+            raise ValueError(
+                f"{csv_path.name} line {i}: reviewed must be 0 or 1,"
+                f" got {raw_reviewed!r}"
+            )
+        reviewed = int(raw_reviewed)
 
         with conn:
             existing = conn.execute(
@@ -50,9 +66,10 @@ def seed(conn: sqlite3.Connection, csv_path: Path = SEED_CSV) -> dict[str, int]:
             else:
                 cur = conn.execute(
                     "INSERT INTO affix (canonical, type, origin_lang, source_form,"
-                    " gloss, notes) VALUES (?, ?, ?, ?, ?, ?)",
+                    " gloss, notes, reviewed) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     (canonical, type_, row["origin_lang"],
-                     row["source_form"] or None, gloss, row["notes"] or None),
+                     row["source_form"] or None, gloss, row["notes"] or None,
+                     reviewed),
                 )
                 affix_id = cur.lastrowid
                 stats["inserted"] += 1
