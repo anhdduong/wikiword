@@ -122,9 +122,13 @@ def _build_edges(word: str, lex: Lexicon) -> list[list[_Edge]]:
         for j in range(i + 1, min(n, i + max_len) + 1):
             sub = word[i:j]
 
+            # A form whose affix reading is wrong in this particular word
+            # (about/ab, fraud/aud) contributes no affix edge. It can still
+            # match below as a free word, which is normally the right read.
             by_kind: dict[str, list] = {}
-            for entry in lex.forms.get(sub, ()):
-                by_kind.setdefault(entry.kind, []).append(entry)
+            if not lex.blocked(word, sub):
+                for entry in lex.forms.get(sub, ()):
+                    by_kind.setdefault(entry.kind, []).append(entry)
             for kind, entries in by_kind.items():
                 cost = KNOWN_BASE + (
                     0.0 if any(e.reviewed for e in entries) else UNREVIEWED_PENALTY
@@ -165,11 +169,15 @@ def _build_edges(word: str, lex: Lexicon) -> list[list[_Edge]]:
     return edges_from
 
 
-def _build_piece(edge: _Edge, lex: Lexicon) -> Piece:
+def _build_piece(edge: _Edge, lex: Lexicon, word: str) -> Piece:
     """Resolve a path edge into an output Piece, enriching free-word matches
-    with any learned-root reading of the same surface (meter -> metr row)."""
+    with any learned-root reading of the same surface (meter -> metr row).
+
+    That promotion has to honour the exceptions too, or blocking the affix
+    edge achieves nothing: laptop's 'top' would still come back typed as
+    Ancient Greek topos by way of its free-word edge."""
     kind, ids = edge.kind, edge.affix_ids
-    if kind == FREE:
+    if kind == FREE and not lex.blocked(word, edge.surface):
         root_ids = tuple(
             e.affix_id for e in lex.forms.get(edge.surface, ()) if e.kind == ROOT
         )
@@ -218,7 +226,7 @@ def segment(word: str, lex: Lexicon, k: int = 5) -> list[Candidate]:
 
         if pos == n:
             if phase in ACCEPTING:
-                cand = Candidate(tuple(_build_piece(e, lex) for e in path), cost)
+                cand = Candidate(tuple(_build_piece(e, lex, word) for e in path), cost)
                 # Cheaper-first order means the kept variant of an analysis is
                 # always its best-cost form (direct match beats linker split).
                 if not any(equivalent(cand, prev) for prev in results):

@@ -24,8 +24,36 @@ from pathlib import Path
 from app.db import DEFAULT_DB_PATH, connect, migrate
 
 SEED_CSV = Path(__file__).parent.parent / "seed" / "affixes.csv"
+EXCEPTIONS_CSV = Path(__file__).parent.parent / "seed" / "exceptions.csv"
 
 VALID_TYPES = {"prefix", "root", "suffix", "combining_form"}
+
+
+def seed_exceptions(
+    conn: sqlite3.Connection, csv_path: Path = EXCEPTIONS_CSV
+) -> int:
+    """Replace affix_exception wholesale from the CSV.
+
+    Unlike affix rows there is no curation state to protect here — the file
+    is the whole truth — so a delete-and-reload keeps removals working.
+    """
+    if not csv_path.exists():
+        return 0
+    with open(csv_path, newline="", encoding="utf-8") as f:
+        rows = [
+            (r["word"].strip().lower(), r["form"].strip().lower(),
+             (r.get("reason") or "").strip() or None)
+            for r in csv.DictReader(f)
+            if r.get("word", "").strip() and r.get("form", "").strip()
+        ]
+    with conn:
+        conn.execute("DELETE FROM affix_exception")
+        conn.executemany(
+            "INSERT OR REPLACE INTO affix_exception (word, form, reason)"
+            " VALUES (?, ?, ?)",
+            rows,
+        )
+    return len(rows)
 
 
 def seed(conn: sqlite3.Connection, csv_path: Path = SEED_CSV) -> dict[str, int]:
@@ -80,6 +108,8 @@ def seed(conn: sqlite3.Connection, csv_path: Path = SEED_CSV) -> dict[str, int]:
                 [(form, affix_id) for form in forms],
             )
             stats["forms"] += len(forms)
+
+    stats["exceptions"] = seed_exceptions(conn)
 
     # New rows change what the segmenter can match, but the lexicon isn't
     # part of model_version — clear the cache so stale segmentations can't

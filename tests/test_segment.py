@@ -260,3 +260,51 @@ def test_promoted_morphemes_produce_expected_split(lex, word, expected):
 def test_excluded_forms_leave_these_words_alone(lex, word):
     top = surfaces(segment(word, lex)[0])
     assert top == [word] or len(top[0]) > 2, f"{word} -> {top}"
+
+
+# --- per-word affix exceptions (audit priority 3) ---------------------------
+# The review queue's "dismiss" only deletes the queue entry, so a false match
+# kept firing forever. Removing the form is not an option either: ab- is real
+# in absent, aud is real in audible. The block is therefore per word.
+
+@pytest.mark.parametrize("word,blocked", [
+    ("about", "ab"),        # Old English onbutan
+    ("fraud", "aud"),       # fraus/fraud-, unrelated to audire
+    ("path", "path"),       # Old English paeth, not Greek pathos
+    ("person", "per"),      # persona, unanalyzable
+    ("really", "re"),       # real + -ly
+    ("laptop", "top"),      # Old English topp, not Greek topos
+    ("cemetery", "meter"),  # koimeterion, not Greek metron
+    ("diary", "dia"),       # Latin dies, not Greek dia-
+    ("heaven", "ven"),      # Old English heofon, not Latin venire
+    ("stopped", "ped"),     # the -ed suffix, not Latin ped- 'foot'
+])
+def test_exception_suppresses_the_false_affix_reading(lex, word, blocked):
+    top = segment(word, lex)[0]
+    for p in top.pieces:
+        if p.surface == blocked:
+            assert p.kind in ("free", "unknown"), (
+                f"{word}: {blocked!r} still read as {p.kind}"
+            )
+
+
+def test_exception_is_scoped_to_its_word(lex):
+    # Blocking a form must not disable it everywhere: the same morphemes
+    # still analyse other words.
+    assert "ab" in surfaces(segment("absent", lex)[0])
+    aud = next(p for p in segment("audible", lex)[0].pieces if p.surface == "aud")
+    assert aud.kind == "root"
+    top = next(p for p in segment("topic", lex)[0].pieces if p.surface == "top")
+    assert top.kind == "root"
+
+
+def test_blocked_span_can_still_match_as_a_free_word(lex):
+    # laptop keeps both pieces — 'top' simply stops claiming Greek topos.
+    pieces = {p.surface: p.kind for p in segment("laptop", lex)[0].pieces}
+    assert pieces == {"lap": "free", "top": "free"}
+
+
+def test_exception_restores_the_whole_word_reading(lex):
+    # With the spurious prefix gone, common words stop decomposing at all.
+    for word in ("about", "again", "away", "after", "never", "okay", "until"):
+        assert surfaces(segment(word, lex)[0]) == [word], word

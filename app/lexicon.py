@@ -39,6 +39,13 @@ class Lexicon:
     free_words: frozenset[str]
     freq_rank: dict[str, int]  # 0 = most frequent
     max_form_len: int
+    # word -> forms whose affix reading is wrong *in that word only*
+    # (about/ab, fraud/aud). The form keeps working everywhere else, and the
+    # span can still match as a free word.
+    exceptions: dict[str, frozenset[str]]
+
+    def blocked(self, word: str, form: str) -> bool:
+        return form in self.exceptions.get(word, frozenset())
 
 
 def load_lexicon(
@@ -64,9 +71,17 @@ def load_lexicon(
                 free_words.add(word)
                 freq_rank.setdefault(word, rank)
 
+    exceptions: dict[str, set[str]] = {}
+    try:
+        for row in conn.execute("SELECT word, form FROM affix_exception"):
+            exceptions.setdefault(row["word"], set()).add(row["form"])
+    except sqlite3.OperationalError:
+        pass  # database predates migration 003
+
     return Lexicon(
         forms={k: tuple(v) for k, v in forms.items()},
         free_words=frozenset(free_words),
         freq_rank=freq_rank,
         max_form_len=max(map(len, forms), default=0),
+        exceptions={k: frozenset(v) for k, v in exceptions.items()},
     )

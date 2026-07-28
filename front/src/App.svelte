@@ -2,6 +2,12 @@
   import Admin from './Admin.svelte';
   import { apiUrl } from './api.js';
 
+  // Curation is a maintainer's tool, not part of the public site. The API's
+  // /admin routes are separately gated by HTTP Basic auth, so this only
+  // removes the tab visitors would otherwise click into a 401 prompt.
+  // `npm run dev` still shows it.
+  const SHOW_ADMIN = import.meta.env.DEV;
+
   let view = $state('lookup');
   let word = $state('');
   let loading = $state(false);
@@ -79,12 +85,14 @@
     <nav>
       <button class="tab" class:active={view === 'lookup'}
         onclick={() => (view = 'lookup')}>lookup</button>
-      <button class="tab" class:active={view === 'admin'}
-        onclick={() => (view = 'admin')}>review queue</button>
+      {#if SHOW_ADMIN}
+        <button class="tab" class:active={view === 'admin'}
+          onclick={() => (view = 'admin')}>review queue</button>
+      {/if}
     </nav>
   </header>
 
-  {#if view === 'admin'}
+  {#if SHOW_ADMIN && view === 'admin'}
     <Admin />
   {:else}
   <form onsubmit={lookup}>
