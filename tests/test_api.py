@@ -328,17 +328,18 @@ def test_dictionary_failure_serves_but_does_not_cache(api, monkeypatch):
 
 
 def test_no_facts_means_null_prose_and_still_cached(api):
-    # strengths: no morpheme carries an authoritative meaning, so the
-    # literal sense is omitted honestly — and that IS the complete answer:
-    # cache it. (fetch_definition is stubbed to a definitive miss.)
+    # sunflower: both pieces are free words with no authoritative meaning,
+    # so the literal sense is omitted honestly — and that IS the complete
+    # answer: cache it. (fetch_definition is stubbed to a definitive miss.)
+    # strengths no longer works here: its plural -s is a glossed table row.
     client, db_path = api
-    body = client.get("/lookup", params={"word": "strengths"}).json()
+    body = client.get("/lookup", params={"word": "sunflower"}).json()
     assert body["literal_meaning"] is None
     assert body["modern_usage"] is None
     assert "literal sense omitted" in body["status_note"]
     conn = connect(db_path)
     row = conn.execute(
-        "SELECT word FROM word_cache WHERE word = 'strengths'"
+        "SELECT word FROM word_cache WHERE word = 'sunflower'"
     ).fetchone()
     conn.close()
     assert row is not None

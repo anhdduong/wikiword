@@ -240,3 +240,10 @@ myth,root,Ancient Greek,mythos,"story, tale, speech",,myth|mytho,mythos,1
 schem,root,Ancient Greek,schema,"form, figure, plan",,schem|schemat,schema,1
 rhythm,root,Ancient Greek,rhythmos,measured flow,,rhythm|rhyth,rhythmos,1
 phras,root,Ancient Greek,phrazein,"to speak, declare",,phras|phrase,phrazein,1
+-s,suffix,Old English,"-as, -es",plural; third-person singular present,"inflectional, not derivational — carried here so plurals stop surfacing as unmatched spans (thing|s, not thi|ngs)",s|es|ies|ves,-s,1
+-ed,suffix,Old English,"-ode, -de",past tense; past participle,"1-letter allomorphs d/t deliberately excluded: they split said, find, told, wait, went and hundreds of other whole words",ed,-ed,1
+-ing,suffix,Old English,"-ung, -ing",verbal noun; present participle,,ing,-ing,1
+-est,suffix,Old English,-ost,superlative degree,form 'st' deliberately excluded: it breaks first/last/best/must,est,-est,1
+-ty,suffix,Old English,-tig,group of ten,"fifty, sixty — distinct from the Latinate -ty of quality/city",ty|tig,-ty,1
+-teen,suffix,Old English,-tyne,ten more than,,teen,-teen,1
+-th,suffix,Old English,"-thu, -otha",forms ordinals and abstract nouns,"fourth, wealth, strength",th,-th,1

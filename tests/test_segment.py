@@ -101,9 +101,13 @@ def test_whole_word_never_a_single_free_piece(lex):
 
 
 def test_strengths_degrades_gracefully(lex):
+    # Originally the plural 's' had nowhere to go and came back as an
+    # unmatched span. The -s row (audit 1a) gives it one, so the same split
+    # now resolves fully — the graceful degradation this covered is only
+    # reachable for genuinely unknown material.
     cands = segment("strengths", lex)
     assert surfaces(cands[0]) == ["strength", "s"]
-    assert kinds(cands[0]) == ["free", "unknown"]
+    assert kinds(cands[0]) == ["free", "suffix"]
 
 
 def test_antidisestablishmentarianism_deep_stack(lex):
@@ -308,3 +312,43 @@ def test_exception_restores_the_whole_word_reading(lex):
     # With the spurious prefix gone, common words stop decomposing at all.
     for word in ("about", "again", "away", "after", "never", "okay", "until"):
         assert surfaces(segment(word, lex)[0]) == [word], word
+
+
+# --- native inflectional morphemes (audit priority 1a) ----------------------
+
+@pytest.mark.parametrize("word,expected", [
+    ("windows", ["window", "s"]),
+    ("parents", ["parent", "s"]),
+    ("knocked", ["knock", "ed"]),
+    ("looked", ["look", "ed"]),
+    ("moving", ["mov", "ing"]),
+    ("talking", ["talk", "ing"]),
+    ("wishes", ["wish", "es"]),
+    ("duties", ["dut", "ies"]),
+    ("fifty", ["fif", "ty"]),
+    ("fourth", ["four", "th"]),
+])
+def test_inflection_is_split_off(lex, word, expected):
+    assert surfaces(segment(word, lex)[0]) == expected
+
+
+@pytest.mark.parametrize("word", [
+    # Words that merely *end* in an inflectional string. Splitting them would
+    # assert a plural/past/ordinal that isn't there, so each is blocked by a
+    # per-word exception.
+    "loss", "less", "mess", "dress", "possible",
+    "south", "smooth", "teeth", "wealth",
+    "shed", "succeed", "perhaps",
+])
+def test_false_inflection_is_blocked(lex, word):
+    assert surfaces(segment(word, lex)[0]) == [word], word
+
+
+@pytest.mark.parametrize("word", [
+    # The 1-letter allomorphs of -ed (d, t) and 2-letter -est (st) are
+    # deliberately absent: they shredded these everyday words.
+    "said", "find", "told", "wait", "went", "kind", "mind", "dead",
+    "first", "last", "best", "night",
+])
+def test_excluded_inflection_allomorphs_leave_words_whole(lex, word):
+    assert surfaces(segment(word, lex)[0]) == [word], word

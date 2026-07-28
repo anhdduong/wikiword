@@ -80,19 +80,30 @@ def test_free_root_without_corroboration_is_unverified(db, lex):
     assert g.status_note  # explains the downgrade
 
 
-def test_strengths_partial_with_unknown_span(db, lex):
-    cand = segment("strengths", lex)[0]  # strength (free) + s (unknown)
+def test_strengths_plural_resolves(db, lex):
+    # This used to be the "partial with an unknown span" case: the plural
+    # 's' had no table row and came back unmatched. Audit 1a gave it one, so
+    # the whole word now grounds — 'strength' from the corroborating text,
+    # '-s' from the table.
+    cand = segment("strengths", lex)[0]  # strength (free) + s (suffix)
     recs = [record("strengths", "From strength + -s.")]
     g = ground(db, "strengths", cand, recs)
-    assert g.status == "partial"
     by_surface = {m.surface: m for m in g.morphemes}
+    assert by_surface["s"].type == "suffix"
+    assert by_surface["s"].verified
     assert by_surface["strength"].verified
-    assert not by_surface["s"].verified
-    assert by_surface["s"].type == "unknown"
-    # The span is still reported as unknown and still caps status at
-    # partial — it is just below MIN_QUEUE_SURFACE, so it is not offered
-    # for curation. Reporting and curation are separate concerns.
-    assert "s" not in queue_surfaces(db)
+    assert g.status == "grounded"
+
+
+def test_partial_status_from_an_unknown_span(db, lex):
+    # crystal -> cry + st + al: the 'st' span matches nothing, which is what
+    # caps the status at partial.
+    cand = segment("crystal", lex)[0]
+    g = ground(db, "crystal", cand, [record("crystal", "From Latin crystallum.")])
+    by_surface = {m.surface: m for m in g.morphemes}
+    assert by_surface["st"].type == "unknown"
+    assert not by_surface["st"].verified
+    assert g.status == "partial"
 
 
 def test_gibberish_unverified(db, lex):
@@ -230,12 +241,12 @@ THEORY_TEXT = ('Borrowed from Late Latin theōria, from Ancient Greek θεωρί
 
 
 def test_short_unknown_spans_are_not_queued(db, lex):
-    # physics -> physi + cs; "cs" is the residue of a split, not a morpheme
-    # anyone should curate.
-    cand = segment("physics", lex)[0]
-    assert any(p.kind == "unknown" and p.surface == "cs" for p in cand.pieces)
-    ground(db, "physics", cand, [])
-    assert "cs" not in queue_surfaces(db)
+    # crystal -> cry + st + al; "st" is the residue of a split, not a
+    # morpheme anyone should curate.
+    cand = segment("crystal", lex)[0]
+    assert any(p.kind == "unknown" and p.surface == "st" for p in cand.pieces)
+    ground(db, "crystal", cand, [])
+    assert "st" not in queue_surfaces(db)
 
 
 def test_long_unknown_spans_still_queue(db, lex):
