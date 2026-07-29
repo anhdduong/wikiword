@@ -81,15 +81,16 @@
 <main>
   <header>
     <h1>wikiword</h1>
-    <p class="tagline">etymology breakdown — every fact grounded, or labeled</p>
-    <nav>
-      <button class="tab" class:active={view === 'lookup'}
-        onclick={() => (view = 'lookup')}>lookup</button>
-      {#if SHOW_ADMIN}
+    <!-- The nav is dev-only: with the admin build flag off there is just one
+         view, and a lone "lookup" tab is a control that does nothing. -->
+    {#if SHOW_ADMIN}
+      <nav>
+        <button class="tab" class:active={view === 'lookup'}
+          onclick={() => (view = 'lookup')}>lookup</button>
         <button class="tab" class:active={view === 'admin'}
           onclick={() => (view = 'admin')}>review queue</button>
-      {/if}
-    </nav>
+      </nav>
+    {/if}
   </header>
 
   {#if SHOW_ADMIN && view === 'admin'}
@@ -200,7 +201,7 @@
             {#if m.meaning}
               <div class="meaning">“{m.meaning}”</div>
             {:else if m.type === 'word'}
-              <div class="meaning none">everyday English word — click it to break it down</div>
+              <div class="meaning none">everyday English word</div>
             {:else}
               <div class="meaning none">no verified meaning</div>
             {/if}
@@ -287,14 +288,15 @@
     font-size: 2rem;
     letter-spacing: -0.02em;
   }
-  .tagline {
-    margin: 0.25rem 0 0.75rem;
-    color: #6d6558;
+  header {
+    /* The gap below the header used to come from nav's margin; nav is now
+       dev-only, so the header owns its own spacing. */
+    margin-bottom: 1.5rem;
   }
   nav {
     display: flex;
     gap: 0.4rem;
-    margin-bottom: 1.5rem;
+    margin-top: 0.75rem;
   }
   button.tab {
     background: #efe9dd;
