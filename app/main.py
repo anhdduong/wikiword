@@ -71,19 +71,6 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
     app = FastAPI(title="wikiword", lifespan=lifespan)
     app.state.db_path = db_path
 
-    # Split-host deploys (frontend on Vercel/GitHub Pages, backend here) need
-    # CORS; a single-server deploy where front/dist is mounted below never
-    # crosses origins, so this is opt-in via env var and a no-op otherwise.
-    cors_origins = os.environ.get("WIKIWORD_CORS_ORIGINS")
-    if cors_origins:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=[o.strip() for o in cors_origins.split(",") if o.strip()],
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
-
     @app.get("/lookup")
     def lookup(word: str):
         w = word.strip().lower()
@@ -311,6 +298,27 @@ def create_app(db_path: str | Path = DEFAULT_DB_PATH) -> FastAPI:
                         headers={"WWW-Authenticate": 'Basic realm="admin"'},
                     )
             return await call_next(request)
+
+    # Split-host deploys (frontend on Vercel/GitHub Pages, backend here) need
+    # CORS; a single-server deploy where front/dist is mounted below never
+    # crosses origins, so this is opt-in via env var and a no-op otherwise.
+    #
+    # Registered LAST on purpose: Starlette makes the most recently added
+    # middleware the outermost, and CORS has to sit *outside* the admin auth
+    # check above. Inside it, the admin UI could not work cross-origin at all:
+    # a preflight OPTIONS carries no credentials, so auth answered it 401 and
+    # every approve/promote/dismiss died before it was sent; and a 401 with no
+    # CORS headers reaches the browser as an opaque network error, so the page
+    # could not even tell "not signed in" from "server down".
+    cors_origins = os.environ.get("WIKIWORD_CORS_ORIGINS")
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[o.strip() for o in cors_origins.split(",") if o.strip()],
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     # Production serving: mount the built front end (front/dist) at /.
     # Registered after the API routes, so /lookup keeps priority. In dev,

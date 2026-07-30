@@ -1,6 +1,17 @@
 <script>
   import { apiUrl } from './api.js';
 
+  // The server's 401 carries no body, so resp.json() on it fails with a JSON
+  // parse error that says nothing useful. Name the state instead.
+  //
+  // Reaching this at all means the browser's own Basic-auth prompt did not
+  // resolve it: the queue fetch is a simple request, so a 401 normally makes
+  // the browser ask for credentials and retry transparently. Getting here
+  // means the prompt was dismissed, or the credentials were wrong.
+  const UNAUTHORIZED =
+    'not signed in — reload to be prompted again, or open ' +
+    apiUrl('/admin/queue') + ' directly to enter the admin credentials';
+
   let entries = $state([]);
   let error = $state(null);
   let busy = $state(false);
@@ -14,6 +25,7 @@
     error = null;
     try {
       const resp = await fetch(apiUrl('/admin/queue'), { credentials: 'include' });
+      if (resp.status === 401) throw new Error(UNAUTHORIZED);
       const body = await resp.json();
       if (!resp.ok) throw new Error(body.detail ?? `HTTP ${resp.status}`);
       entries = body.entries;
@@ -36,6 +48,7 @@
         headers: body ? { 'content-type': 'application/json' } : {},
         body: body ? JSON.stringify(body) : undefined,
       });
+      if (resp.status === 401) throw new Error(UNAUTHORIZED);
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.detail?.[0]?.msg ?? data.detail ?? `HTTP ${resp.status}`);
       await refresh();

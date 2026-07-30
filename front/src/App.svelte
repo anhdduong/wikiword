@@ -2,11 +2,27 @@
   import Admin from './Admin.svelte';
   import { apiUrl } from './api.js';
 
-  // Curation is a maintainer's tool, not part of the public site. The API's
-  // /admin routes are separately gated by HTTP Basic auth, so this only
-  // removes the tab visitors would otherwise click into a 401 prompt.
-  // `npm run dev` still shows it.
-  const SHOW_ADMIN = import.meta.env.DEV;
+  // Curation is a maintainer's tool, not part of the public site — but the
+  // tab has to exist in the production build for the maintainer to reach it,
+  // so this can no longer be the build-time DEV flag it used to be.
+  //
+  // What actually protects the data is server-side: /admin answers 401
+  // without HTTP Basic credentials (app/main.py). This flag decides only
+  // whether a visitor is shown a door they cannot open. Visiting ?admin=1
+  // once unlocks it for that browser; ?admin=0 puts it back.
+  function adminUnlocked() {
+    if (import.meta.env.DEV) return true;
+    try {
+      const flag = new URLSearchParams(location.search).get('admin');
+      if (flag === '1') localStorage.setItem('wikiword:admin', '1');
+      if (flag === '0') localStorage.removeItem('wikiword:admin');
+      return localStorage.getItem('wikiword:admin') === '1';
+    } catch {
+      return false; // storage blocked (private mode): stay hidden
+    }
+  }
+
+  const SHOW_ADMIN = adminUnlocked();
 
   let view = $state('lookup');
   let word = $state('');
@@ -81,16 +97,14 @@
 <main>
   <header>
     <h1>wikiword</h1>
-    <!-- The nav is dev-only: with the admin build flag off there is just one
-         view, and a lone "lookup" tab is a control that does nothing. -->
-    {#if SHOW_ADMIN}
-      <nav>
-        <button class="tab" class:active={view === 'lookup'}
-          onclick={() => (view = 'lookup')}>lookup</button>
+    <nav>
+      <button class="tab" class:active={view === 'lookup'}
+        onclick={() => (view = 'lookup')}>lookup</button>
+      {#if SHOW_ADMIN}
         <button class="tab" class:active={view === 'admin'}
           onclick={() => (view = 'admin')}>review queue</button>
-      </nav>
-    {/if}
+      {/if}
+    </nav>
   </header>
 
   {#if SHOW_ADMIN && view === 'admin'}
@@ -288,15 +302,10 @@
     font-size: 2rem;
     letter-spacing: -0.02em;
   }
-  header {
-    /* The gap below the header used to come from nav's margin; nav is now
-       dev-only, so the header owns its own spacing. */
-    margin-bottom: 1.5rem;
-  }
   nav {
     display: flex;
     gap: 0.4rem;
-    margin-top: 0.75rem;
+    margin: 0.75rem 0 1.5rem;
   }
   button.tab {
     background: #efe9dd;
